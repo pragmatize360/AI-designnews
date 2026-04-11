@@ -1,0 +1,20 @@
+// Prisma schema for the AI News Hub
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Article {
+  id          Int      @id @default(autoincrement())
+  title       String   
+  content     String   
+  publishedAt DateTime @default(now())
+}
+
+model User {
+  id       Int      @id @default(autoincrement())
+  name     String   
+  email    String   @unique
+  articles Article[]
+}
