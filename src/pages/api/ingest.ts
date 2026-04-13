@@ -1,4 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from "next";
+import { isAdminAuthorized } from "@/lib/auth";
 import { runIngestion } from "@/lib/ingestion/run";
 
 export default async function handler(
@@ -7,6 +8,10 @@ export default async function handler(
 ) {
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Method not allowed" });
+  }
+
+  if (!isAdminAuthorized(req)) {
+    return res.status(401).json({ error: "Unauthorized" });
   }
 
   try {

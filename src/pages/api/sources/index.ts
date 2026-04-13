@@ -1,5 +1,9 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import prisma from "@/lib/prisma";
+import { isAdminAuthorized } from "@/lib/auth";
+
+const VALID_TYPES = ["rss", "html", "api", "youtube"];
+const VALID_TIERS = ["official_vendor", "reputed_press", "research_university", "influencer"];
 
 export default async function handler(
   req: NextApiRequest,
@@ -51,18 +55,19 @@ export default async function handler(
   }
 
   if (req.method === "POST") {
+    if (!isAdminAuthorized(req)) {
+      return res.status(401).json({ error: "Unauthorized" });
+    }
     try {
       const { name, type, url, trustTier, enabled, tags, htmlSelector, channelId } = req.body;
       if (!name || !type || !url || !trustTier) {
         return res.status(400).json({ error: "name, type, url, and trustTier are required" });
       }
-      const validTypes = ["rss", "html", "api", "youtube"];
-      const validTiers = ["official_vendor", "reputed_press", "research_university", "influencer"];
-      if (!validTypes.includes(type)) {
-        return res.status(400).json({ error: `type must be one of: ${validTypes.join(", ")}` });
+      if (!VALID_TYPES.includes(type)) {
+        return res.status(400).json({ error: `type must be one of: ${VALID_TYPES.join(", ")}` });
       }
-      if (!validTiers.includes(trustTier)) {
-        return res.status(400).json({ error: `trustTier must be one of: ${validTiers.join(", ")}` });
+      if (!VALID_TIERS.includes(trustTier)) {
+        return res.status(400).json({ error: `trustTier must be one of: ${VALID_TIERS.join(", ")}` });
       }
       const source = await prisma.source.create({
         data: {
