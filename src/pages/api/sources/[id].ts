@@ -1,15 +1,10 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import prisma from "@/lib/prisma";
-import { isAdminAuthorized } from "@/lib/auth";
 
 export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
-  if (!isAdminAuthorized(req)) {
-    return res.status(401).json({ error: "Unauthorized" });
-  }
-
   const { id } = req.query;
   if (!id || typeof id !== "string") {
     return res.status(400).json({ error: "Missing source ID" });
@@ -24,20 +19,31 @@ export default async function handler(
       if (!source) return res.status(404).json({ error: "Source not found" });
       return res.status(200).json(source);
     } catch (e) {
-      console.error("Error:", e);
+      console.error("Error fetching source:", e);
       return res.status(500).json({ error: "Internal server error" });
     }
   }
 
-  if (req.method === "PUT" || req.method === "PATCH") {
+  if (req.method === "PUT") {
     try {
+      const { name, type, url, trustTier, enabled, tags, htmlSelector, channelId } = req.body;
+      const data: Record<string, unknown> = {};
+      if (name !== undefined) data.name = name;
+      if (type !== undefined) data.type = type;
+      if (url !== undefined) data.url = url;
+      if (trustTier !== undefined) data.trustTier = trustTier;
+      if (enabled !== undefined) data.enabled = enabled;
+      if (tags !== undefined) data.tags = tags;
+      if (htmlSelector !== undefined) data.htmlSelector = htmlSelector;
+      if (channelId !== undefined) data.channelId = channelId;
+
       const source = await prisma.source.update({
         where: { id },
-        data: req.body,
+        data,
       });
       return res.status(200).json(source);
     } catch (e) {
-      console.error("Error:", e);
+      console.error("Error updating source:", e);
       return res.status(500).json({ error: "Internal server error" });
     }
   }
@@ -47,7 +53,7 @@ export default async function handler(
       await prisma.source.delete({ where: { id } });
       return res.status(204).end();
     } catch (e) {
-      console.error("Error:", e);
+      console.error("Error deleting source:", e);
       return res.status(500).json({ error: "Internal server error" });
     }
   }
