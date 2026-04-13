@@ -5,9 +5,8 @@ generator client {
 }
 
 datasource db {
-  provider  = "postgresql"
-  url       = env("DATABASE_URL")
-  directUrl = env("DIRECT_URL")
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
 enum SourceType {
@@ -46,11 +45,8 @@ model Source {
   trustTier TrustTier
   enabled   Boolean    @default(true)
   tags      String[]   @default([])
-  // HTML parsing config (optional)
   htmlSelector String?
-  // YouTube channel ID (optional, for youtube type)
   channelId    String?
-  // Degradation tracking
   consecutiveFailures Int @default(0)
   degradedUntil       DateTime?
   createdAt DateTime   @default(now())
