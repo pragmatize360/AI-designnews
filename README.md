@@ -15,11 +15,22 @@ A comprehensive AI news aggregation platform built with **Next.js 14**, **Prisma
 
 ## Tech Stack
 
-- **Framework**: Next.js 14 (Pages Router)
+- **Framework**: Next.js 15 (Pages Router)
 - **Database**: PostgreSQL with Prisma ORM
 - **RSS Parsing**: rss-parser
 - **HTML Parsing**: cheerio
 - **Deployment**: Vercel-ready
+
+## Project Structure
+
+```
+pages/          # Next.js pages and API routes
+components/     # Shared React components
+src/lib/        # Utility modules (Prisma client, auth, ingestion, scoring)
+src/styles/     # Global CSS styles
+src/types/      # TypeScript type definitions
+prisma/         # Prisma schema and seed script
+```
 
 ## Quick Start
 
@@ -124,9 +135,14 @@ crontab -e
 
 1. Push to GitHub
 2. Import project in [Vercel Dashboard](https://vercel.com/new)
-3. Add environment variables (DATABASE_URL, DIRECT_URL, ADMIN_TOKEN)
-4. Deploy — Vercel auto-detects Next.js
+3. **Add environment variables** in Vercel → Project Settings → Environment Variables:
+   - `DATABASE_URL` — PostgreSQL connection string (e.g. from [Supabase](https://supabase.com) or [Neon](https://neon.tech)). **Required** — the build and all API routes depend on this.
+   - `DIRECT_URL` — Direct (non-pooled) PostgreSQL connection string (required for Prisma migrations)
+   - `ADMIN_TOKEN` — Secret token for admin API endpoints
+4. Deploy — Vercel auto-detects Next.js. The build script (`prisma generate && next build`) automatically generates the Prisma client before building.
 5. Set up cron job for automated ingestion
+
+> **Note:** If you see a 404 after deploying, ensure `DATABASE_URL` is set in Vercel environment variables and redeploy. Prisma must generate its client during the build step.
 
 ## Database Schema
 
