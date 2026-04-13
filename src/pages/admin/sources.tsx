@@ -36,6 +36,10 @@ export default function SourcesPage() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState({ ...EMPTY_FORM });
   const [error, setError] = useState("");
+  const [filterType, setFilterType] = useState("");
+  const [filterTier, setFilterTier] = useState("");
+  const [filterEnabled, setFilterEnabled] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
 
   const headers = useCallback(
     () => ({
@@ -246,6 +250,49 @@ export default function SourcesPage() {
 
         {loading && <p>Loading...</p>}
 
+        {/* Filters */}
+        <div className="feed__filters" style={{ marginBottom: "1rem" }}>
+          <select
+            value={filterType}
+            onChange={(e) => setFilterType(e.target.value)}
+            className="feed__filter-select"
+          >
+            <option value="">All Types</option>
+            <option value="rss">RSS</option>
+            <option value="youtube">YouTube</option>
+            <option value="html">HTML</option>
+            <option value="api">API</option>
+          </select>
+          <select
+            value={filterTier}
+            onChange={(e) => setFilterTier(e.target.value)}
+            className="feed__filter-select"
+          >
+            <option value="">All Tiers</option>
+            <option value="official_vendor">Official Vendor</option>
+            <option value="reputed_press">Reputed Press</option>
+            <option value="research_university">Research / University</option>
+            <option value="influencer">Creator / Influencer</option>
+          </select>
+          <select
+            value={filterEnabled}
+            onChange={(e) => setFilterEnabled(e.target.value)}
+            className="feed__filter-select"
+          >
+            <option value="">All Status</option>
+            <option value="true">Active</option>
+            <option value="false">Disabled</option>
+          </select>
+          <input
+            type="text"
+            placeholder="Search sources..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="feed__filter-select"
+            style={{ flex: 1, minWidth: "200px" }}
+          />
+        </div>
+
         {/* Source table */}
         <table className="admin__table">
           <thead>
@@ -259,7 +306,23 @@ export default function SourcesPage() {
             </tr>
           </thead>
           <tbody>
-            {sources.map((s) => (
+            {sources
+              .filter((s) => {
+                if (filterType && s.type !== filterType) return false;
+                if (filterTier && s.trustTier !== filterTier) return false;
+                if (filterEnabled === "true" && !s.enabled) return false;
+                if (filterEnabled === "false" && s.enabled) return false;
+                if (searchQuery) {
+                  const q = searchQuery.toLowerCase();
+                  return (
+                    s.name.toLowerCase().includes(q) ||
+                    s.url.toLowerCase().includes(q) ||
+                    s.tags.some((t) => t.toLowerCase().includes(q))
+                  );
+                }
+                return true;
+              })
+              .map((s) => (
               <tr key={s.id}>
                 <td>
                   <strong>{s.name}</strong>
