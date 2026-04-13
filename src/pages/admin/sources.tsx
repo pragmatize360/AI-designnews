@@ -62,8 +62,21 @@ export default function SourcesPage() {
     if (authenticated) loadSources();
   }, [authenticated, loadSources]);
 
-  function login() {
-    setAuthenticated(true);
+  async function login() {
+    // Validate token by making a test request
+    try {
+      const res = await fetch("/api/admin/sources", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) {
+        setError("Invalid admin token");
+        return;
+      }
+      setSources(await res.json());
+      setAuthenticated(true);
+    } catch {
+      setError("Failed to connect");
+    }
   }
 
   function startEdit(src: Source) {
@@ -147,11 +160,20 @@ export default function SourcesPage() {
   }
 
   async function toggleEnabled(src: Source) {
-    await fetch(`/api/admin/sources/${src.id}`, {
-      method: "PATCH",
-      headers: headers(),
-      body: JSON.stringify({ enabled: !src.enabled }),
-    });
+    try {
+      const res = await fetch(`/api/admin/sources/${src.id}`, {
+        method: "PATCH",
+        headers: headers(),
+        body: JSON.stringify({ enabled: !src.enabled }),
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        setError(data.error || "Failed to toggle source");
+      }
+    } catch (e) {
+      setError("Network error toggling source");
+      console.error("Toggle failed:", e);
+    }
     loadSources();
   }
 
@@ -166,6 +188,9 @@ export default function SourcesPage() {
         <div className="login">
           <div className="login__card">
             <h2 className="login__title">🔐 Admin Access</h2>
+            {error && (
+              <p style={{ color: "var(--danger)", marginBottom: "0.5rem" }}>{error}</p>
+            )}
             <div className="form-group">
               <label>Admin Token</label>
               <input
