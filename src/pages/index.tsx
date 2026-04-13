@@ -84,7 +84,7 @@ export default function Home() {
         <title>AI News Hub - Latest AI & ML News</title>
         <meta
           name="description"
-          content="Aggregated AI news from 12+ trusted sources"
+          content="Aggregated AI news from 40+ trusted sources"
         />
       </Head>
 
