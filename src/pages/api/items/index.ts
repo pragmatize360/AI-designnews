@@ -17,8 +17,14 @@ export default async function handler(
     const section = req.query.section as string | undefined;
     const type = req.query.type as string | undefined;
     const topic = req.query.topic as string | undefined;
+    const sourceId = req.query.sourceId as string | undefined;
+    const search = req.query.search as string | undefined;
 
     const where: Record<string, unknown> = {};
+
+    if (sourceId) {
+      where.sourceId = sourceId;
+    }
 
     if (section === "official") {
       where.source = { trustTier: "official_vendor" };
@@ -34,6 +40,15 @@ export default async function handler(
 
     if (topic) {
       where.topics = { has: topic };
+    }
+
+    if (search) {
+      const q = search.trim();
+      where.OR = [
+        { title: { contains: q, mode: "insensitive" } },
+        { summary: { contains: q, mode: "insensitive" } },
+        { topics: { has: q.toLowerCase() } },
+      ];
     }
 
     const [items, total] = await Promise.all([
