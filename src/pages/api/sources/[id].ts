@@ -55,6 +55,13 @@ export default async function handler(
       if (htmlSelector !== undefined) data.htmlSelector = htmlSelector;
       if (channelId !== undefined) data.channelId = channelId;
 
+      if (Object.keys(data).length === 0) {
+        return res.status(400).json({ error: "No fields to update" });
+      }
+
+      const existing = await prisma.source.findUnique({ where: { id } });
+      if (!existing) return res.status(404).json({ error: "Source not found" });
+
       const source = await prisma.source.update({
         where: { id },
         data,
@@ -68,6 +75,9 @@ export default async function handler(
 
   if (req.method === "DELETE") {
     try {
+      const existing = await prisma.source.findUnique({ where: { id } });
+      if (!existing) return res.status(404).json({ error: "Source not found" });
+
       await prisma.source.delete({ where: { id } });
       return res.status(204).end();
     } catch (e) {
