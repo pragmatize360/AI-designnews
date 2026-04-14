@@ -1,9 +1,20 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import prisma from "@/lib/prisma";
 import { scoreItem } from "@/lib/scoring";
-import { classifyContent } from "@/lib/content-filter";
+import {
+  classifyContent,
+  CONTENT_CATEGORIES,
+  matchesContentCategory,
+} from "@/lib/content-filter";
 import type { TrustTier } from "@prisma/client";
 import { applyPublicCors } from "@/lib/api/cors";
+
+const AVAILABLE_FILTERS = {
+  sections: ["official", "press", "creators"],
+  itemTypes: ["article", "video", "paper", "release"],
+  contentCategories: CONTENT_CATEGORIES,
+  queryParams: ["page", "limit", "section", "type", "contentCategory", "topic", "sourceId", "search"],
+};
 
 export default async function handler(
   req: NextApiRequest,
@@ -22,6 +33,7 @@ export default async function handler(
     const limit = Math.min(50, Math.max(1, parseInt(req.query.limit as string) || 20));
     const section = req.query.section as string | undefined;
     const type = req.query.type as string | undefined;
+    const contentCategory = req.query.contentCategory as string | undefined;
     const topic = req.query.topic as string | undefined;
     const sourceId = req.query.sourceId as string | undefined;
     const search = req.query.search as string | undefined;
@@ -57,29 +69,34 @@ export default async function handler(
       ];
     }
 
-    const [items, total] = await Promise.all([
-      prisma.item.findMany({
-        where,
-        include: {
-          source: { select: { name: true, trustTier: true, type: true } },
-          videoMeta: true,
-          curations: { where: { pinned: true } },
-        },
-        orderBy: { publishedAt: "desc" },
-        skip: (page - 1) * limit,
-        take: limit,
-      }),
-      prisma.item.count({ where }),
-    ]);
+    const items = await prisma.item.findMany({
+      where,
+      include: {
+        source: { select: { name: true, trustTier: true, type: true } },
+        videoMeta: true,
+        curations: { where: { pinned: true } },
+      },
+      orderBy: { publishedAt: "desc" },
+      skip: (page - 1) * limit,
+      take: limit,
+    });
 
     // Content filter — remove spam / restricted / off-topic items
-    const allowedItems = items.filter((item) =>
-      classifyContent(item.title, item.summary).allowed
-    );
+    const allowedItems = items.filter((item) => {
+      const classification = classifyContent(item.title, item.summary);
+      return (
+        classification.allowed &&
+        matchesContentCategory(item.title, item.summary, contentCategory)
+      );
+    });
 
     // Score and sort items
-    const scored = allowedItems.map((item) => ({
+    const scored = allowedItems.map((item) => {
+      const classification = classifyContent(item.title, item.summary);
+
+      return {
       ...item,
+      contentCategory: classification.category,
       score: scoreItem({
         publishedAt: item.publishedAt,
         trustTier: item.source.trustTier as TrustTier,
@@ -91,7 +108,8 @@ export default async function handler(
         summary: item.summary,
       }),
       pinned: item.curations.some((c) => c.pinned),
-    }));
+      };
+    });
 
     // Pinned items first, then by score
     scored.sort((a, b) => {
@@ -105,9 +123,10 @@ export default async function handler(
       pagination: {
         page,
         limit,
-        total,
-        totalPages: Math.ceil(total / limit),
+        total: allowedItems.length,
+        totalPages: Math.ceil(allowedItems.length / limit),
       },
+      filters: AVAILABLE_FILTERS,
     });
   } catch (e) {
     console.error("Error fetching items:", e);

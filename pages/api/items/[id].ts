@@ -1,5 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import prisma from "@/lib/prisma";
+import { classifyContent } from "@/lib/content-filter";
 import { applyPublicCors } from "@/lib/api/cors";
 
 export default async function handler(
@@ -33,6 +34,11 @@ export default async function handler(
       return res.status(404).json({ error: "Item not found" });
     }
 
+    const itemClassification = classifyContent(item.title, item.summary);
+    if (!itemClassification.allowed) {
+      return res.status(404).json({ error: "Item not found" });
+    }
+
     // Find related items (same source or overlapping topics)
     const related = await prisma.item.findMany({
       where: {
@@ -51,7 +57,20 @@ export default async function handler(
       take: 6,
     });
 
-    return res.status(200).json({ item, related });
+    const allowedRelated = related
+      .filter((entry) => classifyContent(entry.title, entry.summary).allowed)
+      .map((entry) => ({
+        ...entry,
+        contentCategory: classifyContent(entry.title, entry.summary).category,
+      }));
+
+    return res.status(200).json({
+      item: {
+        ...item,
+        contentCategory: itemClassification.category,
+      },
+      related: allowedRelated,
+    });
   } catch (e) {
     console.error("Error fetching item:", e);
     return res.status(500).json({ error: "Internal server error" });

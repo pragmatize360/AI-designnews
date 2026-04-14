@@ -339,6 +339,10 @@ export interface FilterResult {
   reason?: string;
 }
 
+export const CONTENT_CATEGORIES = ["design", "ai", "dev", "business"] as const;
+
+export type ContentCategory = (typeof CONTENT_CATEGORIES)[number];
+
 /**
  * Classify an item as allowed or blocked based on its title + summary.
  *
@@ -389,4 +393,17 @@ export function classifyContent(
     allowed: false,
     reason: "no design / AI / dev / business signal found",
   };
+}
+
+export function matchesContentCategory(
+  title: string,
+  summary: string | null | undefined,
+  category: string | undefined
+): boolean {
+  if (!category) {
+    return true;
+  }
+
+  const result = classifyContent(title, summary);
+  return result.allowed && result.category === category;
 }
