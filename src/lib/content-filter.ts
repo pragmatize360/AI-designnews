@@ -1,18 +1,163 @@
 /**
  * Content relevance filter for AI Design News.
  *
- * Rules:
- *  1. Items must relate to AI, software development, product/UX design, or
- *     corporate/business use of AI.  Off-topic content is discarded.
- *  2. Spam indicators and restricted/NSFW content are always blocked regardless
- *     of any other signals.
+ * Priority levels:
+ *  Level 1 — Design (product, UX, visual, brand, motion — always passes if matched)
+ *  Level 2 — AI / ML signals
+ *  Level 3 — Software development / engineering
+ *  Level 4 — Corporate / business use of AI products
  *
- * Applied at ingestion time — rejected items are never stored in the database.
+ * An item only needs to match ONE level to be allowed.
+ * Spam / restricted content is blocked regardless of any match.
  */
 
-// ── Allowed signal groups ────────────────────────────────────────────────────
+// ── LEVEL 1 — Design signals (highest priority) ──────────────────────────────
 
-/** Broad AI / ML signals — any of these makes an item AI-adjacent. */
+/** Product, UX, visual, and brand design — the primary content focus. */
+const DESIGN_SIGNALS = [
+  // Tools & platforms
+  "figma",
+  "sketch app",
+  "framer",
+  "invision",
+  "zeplin",
+  "principle",
+  "protopie",
+  "adobe xd",
+  "adobe illustrator",
+  "adobe photoshop",
+  "affinity designer",
+  "canva",
+  "spline",
+  "rive ",
+  "lottie",
+  "webflow",
+
+  // Disciplines
+  " design",
+  "product design",
+  "visual design",
+  "interaction design",
+  "interface design",
+  "graphic design",
+  "communication design",
+  "service design",
+  "design thinking",
+  "human-centered design",
+  "user-centered design",
+  "design strategy",
+  "design leadership",
+  "design ops",
+  "designops",
+  "design systems",
+  "design system",
+  "design token",
+  "design language",
+  "design pattern",
+  "design critique",
+  "design review",
+  "design sprint",
+  "design process",
+  "design workflow",
+  "design team",
+  "design org",
+  "design culture",
+
+  // UX / research
+  " ux ",
+  "ux design",
+  "ux research",
+  "ux writing",
+  "ux audit",
+  "user experience",
+  "user research",
+  "user testing",
+  "usability testing",
+  "usability study",
+  "usability",
+  "user interview",
+  "card sorting",
+  "tree testing",
+  "heuristic evaluation",
+  "mental model",
+  "user journey",
+  "customer journey",
+  "journey map",
+  "empathy map",
+  "persona",
+  "user flow",
+  "task flow",
+
+  // UI / visual
+  " ui ",
+  "ui design",
+  "user interface",
+  "interface component",
+  "component library",
+  "component system",
+  "ui kit",
+  "wireframe",
+  "mockup",
+  "prototype",
+  "high-fidelity",
+  "low-fidelity",
+  "lo-fi",
+  "hi-fi",
+  "visual hierarchy",
+  "color palette",
+  "color system",
+  "color theory",
+  "typography",
+  "type scale",
+  "font pairing",
+  "icon set",
+  "iconography",
+  "illustration style",
+  "motion design",
+  "animation",
+  "micro-interaction",
+  "transition design",
+  "dark mode",
+  "light mode",
+
+  // Accessibility
+  "accessibility",
+  "a11y",
+  "wcag",
+  "aria ",
+  "screen reader",
+  "color contrast",
+  "inclusive design",
+  "accessible design",
+
+  // Branding / identity
+  "branding",
+  "brand identity",
+  "brand design",
+  "brand guideline",
+  "logo design",
+  "visual identity",
+  "style guide",
+
+  // Dev–design hand-off / collaboration
+  "hand-off",
+  "handoff",
+  "design handoff",
+  "design to code",
+  "design to dev",
+  "design token",
+  "storybook",
+  "tailwind",
+  "css framework",
+  "responsive design",
+  "mobile-first",
+  "adaptive design",
+  "layout grid",
+  "spacing system",
+];
+
+// ── LEVEL 2 — AI / ML signals ────────────────────────────────────────────────
+
 const AI_SIGNALS = [
   " ai ",
   "artificial intelligence",
@@ -63,7 +208,8 @@ const AI_SIGNALS = [
   "data science",
 ];
 
-/** Software development / engineering signals. */
+// ── LEVEL 3 — Software development / engineering signals ─────────────────────
+
 const DEV_SIGNALS = [
   "software engineer",
   "software development",
@@ -77,8 +223,7 @@ const DEV_SIGNALS = [
   "framework",
   "open source",
   "github",
-  "api",
-  "sdk",
+  " sdk",
   "devops",
   "deployment",
   "ci/cd",
@@ -90,39 +235,11 @@ const DEV_SIGNALS = [
   "code review",
   "version control",
   "package release",
-  "v1.",
-  "v2.",
-  "v3.",
-  " launch",
   "open-source",
 ];
 
-/** Product / UX / visual design signals. */
-const DESIGN_SIGNALS = [
-  " design",
-  "ui/ux",
-  " ux ",
-  " ui ",
-  "figma",
-  "user interface",
-  "user experience",
-  "usability",
-  "prototype",
-  "typography",
-  "accessibility",
-  "design system",
-  "wireframe",
-  "interaction design",
-  "visual design",
-  "branding",
-  "component library",
-  "motion design",
-  "product design",
-  "color palette",
-  "icon set",
-];
+// ── LEVEL 4 — Corporate / business signals ────────────────────────────────────
 
-/** Corporate / business / product strategy signals. */
 const BUSINESS_SIGNALS = [
   "product launch",
   "startup",
@@ -140,9 +257,6 @@ const BUSINESS_SIGNALS = [
   "series c",
   "ipo",
   "valuation",
-  "revenue",
-  "growth",
-  "market",
   "benchmark",
   "case study",
   "whitepaper",
@@ -221,13 +335,20 @@ function hasAnySignal(text: string, signals: readonly string[]): boolean {
 
 export interface FilterResult {
   allowed: boolean;
+  category?: "design" | "ai" | "dev" | "business";
   reason?: string;
 }
 
 /**
  * Classify an item as allowed or blocked based on its title + summary.
  *
- * @returns `{ allowed: true }` when the item should be stored,
+ * Priority order:
+ *  1. Design  (figma, ux, ui, typography, a11y, branding …)
+ *  2. AI / ML
+ *  3. Dev / engineering
+ *  4. Business / corporate
+ *
+ * @returns `{ allowed: true, category }` when the item should be stored,
  *          `{ allowed: false, reason }` when it should be discarded.
  */
 export function classifyContent(
@@ -237,26 +358,35 @@ export function classifyContent(
   // Combine fields; pad with spaces so edge-anchored patterns don't collide
   const text = ` ${title} ${summary || ""} `.toLowerCase();
 
-  // 1. Hard block — spam / restricted / off-topic ───────────────────────────
+  // Hard block — spam / restricted / off-topic ─────────────────────────────
   for (const pattern of BLOCKED_PATTERNS) {
     if (text.includes(pattern)) {
       return { allowed: false, reason: `blocked pattern: "${pattern}"` };
     }
   }
 
-  // 2. Category relevance — must match at least one signal group ────────────
-  const relevant =
-    hasAnySignal(text, AI_SIGNALS) ||
-    hasAnySignal(text, DEV_SIGNALS) ||
-    hasAnySignal(text, DESIGN_SIGNALS) ||
-    hasAnySignal(text, BUSINESS_SIGNALS);
-
-  if (!relevant) {
-    return {
-      allowed: false,
-      reason: "no AI / dev / design / business signal found",
-    };
+  // Level 1 — Design (highest priority, checked first) ─────────────────────
+  if (hasAnySignal(text, DESIGN_SIGNALS)) {
+    return { allowed: true, category: "design" };
   }
 
-  return { allowed: true };
+  // Level 2 — AI / ML ───────────────────────────────────────────────────────
+  if (hasAnySignal(text, AI_SIGNALS)) {
+    return { allowed: true, category: "ai" };
+  }
+
+  // Level 3 — Software development ─────────────────────────────────────────
+  if (hasAnySignal(text, DEV_SIGNALS)) {
+    return { allowed: true, category: "dev" };
+  }
+
+  // Level 4 — Business / corporate ─────────────────────────────────────────
+  if (hasAnySignal(text, BUSINESS_SIGNALS)) {
+    return { allowed: true, category: "business" };
+  }
+
+  return {
+    allowed: false,
+    reason: "no design / AI / dev / business signal found",
+  };
 }

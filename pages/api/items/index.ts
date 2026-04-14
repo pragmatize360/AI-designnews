@@ -87,6 +87,8 @@ export default async function handler(
         metricsLikes: item.metricsLikes,
         topics: item.topics,
         type: item.type,
+        title: item.title,
+        summary: item.summary,
       }),
       pinned: item.curations.some((c) => c.pinned),
     }));

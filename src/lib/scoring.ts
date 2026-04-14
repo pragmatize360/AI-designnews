@@ -1,4 +1,5 @@
 import { TrustTier } from "@prisma/client";
+import { classifyContent } from "./content-filter";
 
 /** Numeric weight for each trust tier (higher = more trusted) */
 const TIER_WEIGHTS: Record<TrustTier, number> = {
@@ -10,7 +11,9 @@ const TIER_WEIGHTS: Record<TrustTier, number> = {
 
 /**
  * Compute a score for ranking items on the homepage.
- * Factors: recency, trust tier, engagement (video views/likes), topic match bonus.
+ * Factors: recency, trust tier, engagement (video views/likes), topic match, design priority bonus.
+ *
+ * Design items (Level 1) receive a +25 priority boost so they surface first.
  */
 export function scoreItem(item: {
   publishedAt: Date | string;
@@ -19,6 +22,8 @@ export function scoreItem(item: {
   metricsLikes?: number;
   topics?: string[];
   type?: string;
+  title?: string;
+  summary?: string | null;
 }): number {
   // Recency score: items within last 24h get full points, decays over 7 days
   const now = Date.now();
@@ -40,7 +45,13 @@ export function scoreItem(item: {
   // Topic relevance bonus (more topics = slightly higher)
   const topicBonus = Math.min(10, (item.topics?.length || 0) * 2);
 
-  return recencyScore + tierScore + engagementScore + topicBonus;
+  // Level 1 design priority boost — design items rank above equally-scored AI/dev/business items
+  const designBonus =
+    item.title && classifyContent(item.title, item.summary).category === "design"
+      ? 25
+      : 0;
+
+  return recencyScore + tierScore + engagementScore + topicBonus + designBonus;
 }
 
 /**
