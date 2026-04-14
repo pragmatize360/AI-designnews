@@ -1,10 +1,10 @@
 # AI News Hub 🤖📰
 
-A comprehensive AI news aggregation platform built with **Next.js 14**, **Prisma**, and **PostgreSQL**. Aggregates news from 12+ trusted sources including RSS feeds, YouTube channels, and web pages.
+A comprehensive AI news aggregation platform built with **Next.js 14**, **Prisma**, and **PostgreSQL**. Aggregates news from 50 trusted sources including RSS feeds, YouTube channels, and web pages.
 
 ## Features
 
-- **12 Pre-configured Sources**: The Verge, MIT News, OpenAI, DeepMind, TechCrunch, NVIDIA, Hugging Face, Google AI, VentureBeat, Ars Technica, Varun Mayya (YouTube), Two Minute Papers (YouTube)
+- **50 Pre-configured Sources**: AI/ML labs, design/UX publications, frontend/dev tooling blogs, product/industry coverage, YouTube creators, and podcast feeds
 - **Multi-format Ingestion**: RSS/Atom feeds, HTML parsing with CSS selectors, YouTube channel RSS
 - **Smart Deduplication**: Canonical hash based on normalized title + URL host + date
 - **Trust-based Scoring**: Official Vendor > Reputed Press > Research/University > Influencer
@@ -92,6 +92,23 @@ Visit [http://localhost:3000](http://localhost:3000)
 | GET/POST/DELETE | `/api/admin/curations` | Manage curations (admin auth) |
 | POST | `/api/admin/items` | Add manual items (admin auth) |
 
+### Public API Base URL
+
+- Production base URL: `https://ai-designnews.vercel.app`
+- Figma-safe read endpoints (CORS enabled):
+  - `GET /api/items`
+  - `GET /api/items/[id]`
+  - `GET /api/search`
+  - `GET /api/sources`
+  - `GET /api/sources/[id]`
+  - `GET /api/ingest/status`
+
+Example:
+
+```bash
+curl "https://ai-designnews.vercel.app/api/items?limit=5&page=1"
+```
+
 ### Authentication
 
 Admin endpoints require a Bearer token:
@@ -159,6 +176,16 @@ Access at `/admin` with your admin token. Features:
 - 📊 **Dashboard**: Items/24h, failure rates, duplicate rate, degraded sources
 - 📡 **Sources**: Enable/disable, re-run ingestion per source
 - 🔄 **Ingestion Runs**: View history, stats, and error logs
+
+## Figma Integration
+
+For direct plugin reads, call the production API base URL:
+
+- `https://ai-designnews.vercel.app/api/items?limit=20&page=1`
+- `https://ai-designnews.vercel.app/api/sources?limit=50&page=1`
+- `https://ai-designnews.vercel.app/api/ingest/status`
+
+These public GET endpoints include CORS headers and can be consumed by browser-based plugin runtimes.
 
 ## Constraints & Ethics
 

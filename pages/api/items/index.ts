@@ -1,12 +1,18 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import prisma from "@/lib/prisma";
 import { scoreItem } from "@/lib/scoring";
+import { classifyContent } from "@/lib/content-filter";
 import type { TrustTier } from "@prisma/client";
+import { applyPublicCors } from "@/lib/api/cors";
 
 export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
+  if (applyPublicCors(req, res)) {
+    return;
+  }
+
   if (req.method !== "GET") {
     return res.status(405).json({ error: "Method not allowed" });
   }
@@ -66,8 +72,13 @@ export default async function handler(
       prisma.item.count({ where }),
     ]);
 
+    // Content filter — remove spam / restricted / off-topic items
+    const allowedItems = items.filter((item) =>
+      classifyContent(item.title, item.summary).allowed
+    );
+
     // Score and sort items
-    const scored = items.map((item) => ({
+    const scored = allowedItems.map((item) => ({
       ...item,
       score: scoreItem({
         publishedAt: item.publishedAt,

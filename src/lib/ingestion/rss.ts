@@ -28,7 +28,7 @@ export interface ParsedItem {
   // YouTube-specific
   videoMeta?: {
     channelName: string;
-    channelId: string;
+    channelId: string | null;
     videoId: string;
     duration: string | null;
   };
@@ -40,19 +40,91 @@ function truncate(text: string | undefined | null, max: number): string | null {
   return clean.length > max ? clean.slice(0, max - 3) + "..." : clean;
 }
 
+function normalizeImageUrl(candidate: string | undefined | null, baseUrl?: string): string | null {
+  if (!candidate) return null;
+  const value = candidate.trim();
+  if (!value || value.startsWith("data:")) return null;
+
+  try {
+    return new URL(value, baseUrl || undefined).toString();
+  } catch {
+    return null;
+  }
+}
+
+function extractFromHtmlPayload(html: string, baseUrl?: string): string | null {
+  const ogMatch = html.match(
+    /<meta[^>]+(?:property|name)=["']og:image["'][^>]+content=["']([^"']+)["'][^>]*>/i
+  );
+  if (ogMatch?.[1]) {
+    const url = normalizeImageUrl(ogMatch[1], baseUrl);
+    if (url) return url;
+  }
+
+  const imgMatch = html.match(/<img[^>]+src=["']([^"']+)["'][^>]*>/i);
+  if (imgMatch?.[1]) {
+    const url = normalizeImageUrl(imgMatch[1], baseUrl);
+    if (url) return url;
+  }
+
+  return null;
+}
+
 function extractThumbnail(item: RssParser.Item): string | null {
+  const baseUrl = item.link || undefined;
+
   const media = (item as Record<string, unknown>)["media:thumbnail"] as
     | { $?: { url?: string } }
     | undefined;
-  if (media?.$?.url) return media.$.url;
+  if (media?.$?.url) {
+    const url = normalizeImageUrl(media.$.url, baseUrl);
+    if (url) return url;
+  }
 
   const group = (item as Record<string, unknown>)["media:group"] as
     | { "media:thumbnail"?: Array<{ $?: { url?: string } }> }
     | undefined;
-  if (group?.["media:thumbnail"]?.[0]?.$?.url) return group["media:thumbnail"][0].$.url;
+  if (group?.["media:thumbnail"]?.[0]?.$?.url) {
+    const url = normalizeImageUrl(group["media:thumbnail"][0].$.url, baseUrl);
+    if (url) return url;
+  }
+
+  const mediaContent = (item as Record<string, unknown>)["media:content"] as
+    | { $?: { url?: string; medium?: string } }
+    | Array<{ $?: { url?: string; medium?: string } }>
+    | undefined;
+  const mediaContentCandidate = Array.isArray(mediaContent)
+    ? mediaContent.find((entry) => entry?.$?.url && entry?.$?.medium !== "audio")?.$?.url
+    : mediaContent?.$?.url;
+  if (mediaContentCandidate) {
+    const url = normalizeImageUrl(mediaContentCandidate, baseUrl);
+    if (url) return url;
+  }
 
   const enclosure = item.enclosure;
-  if (enclosure?.url && enclosure.type?.startsWith("image")) return enclosure.url;
+  if (enclosure?.url && enclosure.type?.startsWith("image")) {
+    const url = normalizeImageUrl(enclosure.url, baseUrl);
+    if (url) return url;
+  }
+
+  const itunesImage = (item as Record<string, unknown>)["itunes:image"] as
+    | { href?: string }
+    | undefined;
+  if (itunesImage?.href) {
+    const url = normalizeImageUrl(itunesImage.href, baseUrl);
+    if (url) return url;
+  }
+
+  const htmlCandidates = [
+    item.content,
+    (item as Record<string, string | undefined>)["content:encoded"],
+    item.summary,
+  ];
+  for (const html of htmlCandidates) {
+    if (!html) continue;
+    const extracted = extractFromHtmlPayload(html, baseUrl);
+    if (extracted) return extracted;
+  }
 
   return null;
 }

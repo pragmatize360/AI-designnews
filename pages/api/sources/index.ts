@@ -1,6 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import prisma from "@/lib/prisma";
 import { isAdminAuthorized } from "@/lib/auth";
+import { applyPublicCors } from "@/lib/api/cors";
 
 const VALID_TYPES = ["rss", "html", "api", "youtube"];
 const VALID_TIERS = ["official_vendor", "reputed_press", "research_university", "influencer"];
@@ -9,6 +10,12 @@ export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
+  if (req.method === "GET" || req.method === "OPTIONS") {
+    if (applyPublicCors(req, res)) {
+      return;
+    }
+  }
+
   if (req.method === "GET") {
     try {
       const page = Math.max(1, parseInt(req.query.page as string) || 1);

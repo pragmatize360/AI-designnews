@@ -1,10 +1,15 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import prisma from "@/lib/prisma";
+import { applyPublicCors } from "@/lib/api/cors";
 
 export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
+  if (applyPublicCors(req, res)) {
+    return;
+  }
+
   if (req.method !== "GET") {
     return res.status(405).json({ error: "Method not allowed" });
   }

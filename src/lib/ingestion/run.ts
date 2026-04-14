@@ -2,13 +2,59 @@ import prisma from "../prisma";
 import { fetchRss, type ParsedItem } from "./rss";
 import { fetchHtml, DEFAULT_HTML_SELECTORS } from "./html";
 import { fetchYouTube } from "./youtube";
+import { classifyContent } from "../content-filter";
 import type { Source, SourceType } from "@prisma/client";
 
 interface RunStats {
   total: number;
   inserted: number;
   duplicates: number;
+  filtered: number;
   errors: number;
+}
+
+const YOUTUBE_ID_RE = /(?:youtube\.com\/(?:watch\?v=|shorts\/|embed\/)|youtu\.be\/)([A-Za-z0-9_-]{11})/i;
+
+function extractYouTubeId(value: string | null | undefined): string | null {
+  if (!value) return null;
+  const match = value.match(YOUTUBE_ID_RE);
+  return match?.[1] || null;
+}
+
+function enrichYouTubeMetadata(source: Source, item: ParsedItem): ParsedItem {
+  if (item.videoMeta?.videoId) {
+    return {
+      ...item,
+      type: "video",
+      thumbnailUrl:
+        item.thumbnailUrl || `https://i.ytimg.com/vi/${item.videoMeta.videoId}/hqdefault.jpg`,
+      videoMeta: {
+        ...item.videoMeta,
+        channelName: item.videoMeta.channelName || source.name,
+      },
+    };
+  }
+
+  const videoId =
+    extractYouTubeId(item.url) ||
+    extractYouTubeId(item.summary) ||
+    extractYouTubeId(item.contentSnippet);
+
+  if (!videoId) {
+    return item;
+  }
+
+  return {
+    ...item,
+    type: "video",
+    thumbnailUrl: item.thumbnailUrl || `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`,
+    videoMeta: {
+      channelName: source.name,
+      channelId: source.channelId || extractChannelId(source.url),
+      videoId,
+      duration: null,
+    },
+  };
 }
 
 /**
@@ -22,8 +68,7 @@ export async function runIngestion(sourceId?: string): Promise<string> {
     },
   });
 
-  const startTime = Date.now();
-  const stats: RunStats = { total: 0, inserted: 0, duplicates: 0, errors: 0 };
+  const stats: RunStats = { total: 0, inserted: 0, duplicates: 0, filtered: 0, errors: 0 };
   const errors: Array<{ source: string; error: string }> = [];
 
   try {
@@ -45,10 +90,19 @@ export async function runIngestion(sourceId?: string): Promise<string> {
 
     for (const source of sources) {
       try {
-        const items = await fetchItemsForSource(source);
+        const fetchedItems = await fetchItemsForSource(source);
+        const items = fetchedItems.map((item) => enrichYouTubeMetadata(source, item));
         stats.total += items.length;
 
         for (const item of items) {
+          // Content relevance + spam filter
+          const filter = classifyContent(item.title, item.summary);
+          if (!filter.allowed) {
+            stats.filtered++;
+            console.log(`[filter] Skipping "${item.title.slice(0, 80)}": ${filter.reason}`);
+            continue;
+          }
+
           try {
             await upsertItem(source, item);
             stats.inserted++;
@@ -183,19 +237,50 @@ async function upsertItem(source: Source, item: ParsedItem): Promise<void> {
   // Check for existing item by canonical hash
   const existing = await prisma.item.findUnique({
     where: { canonicalHash: item.canonicalHash },
+    include: { videoMeta: true },
   });
 
   if (existing) {
-    // Update metrics if changed
+    // Update fields that may arrive later (metrics, thumbnails, video metadata).
+    const updateData: Record<string, unknown> = {};
     if (
       item.metricsViews !== existing.metricsViews ||
       item.metricsLikes !== existing.metricsLikes
     ) {
+      updateData.metricsViews = item.metricsViews;
+      updateData.metricsLikes = item.metricsLikes;
+    }
+
+    if (!existing.thumbnailUrl && item.thumbnailUrl) {
+      updateData.thumbnailUrl = item.thumbnailUrl;
+    }
+
+    if (existing.type !== "video" && item.type === "video") {
+      updateData.type = "video";
+    }
+
+    if (Object.keys(updateData).length > 0) {
       await prisma.item.update({
         where: { id: existing.id },
-        data: {
-          metricsViews: item.metricsViews,
-          metricsLikes: item.metricsLikes,
+        data: updateData,
+      });
+    }
+
+    if (item.videoMeta?.videoId) {
+      await prisma.videoMeta.upsert({
+        where: { itemId: existing.id },
+        create: {
+          itemId: existing.id,
+          channelName: item.videoMeta.channelName,
+          channelId: item.videoMeta.channelId,
+          videoId: item.videoMeta.videoId,
+          duration: item.videoMeta.duration,
+        },
+        update: {
+          channelName: item.videoMeta.channelName,
+          channelId: item.videoMeta.channelId,
+          videoId: item.videoMeta.videoId,
+          duration: item.videoMeta.duration,
         },
       });
     }

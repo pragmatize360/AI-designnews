@@ -1,7 +1,69 @@
 import * as cheerio from "cheerio";
+import type { AnyNode } from "domhandler";
 import { canonicalHash } from "../hash";
 import { tagTopics } from "../topics";
 import type { ParsedItem } from "./rss";
+
+function resolveUrl(candidate: string | undefined | null, pageUrl: string): string | null {
+  if (!candidate) return null;
+  const value = candidate.trim();
+  if (!value || value.startsWith("data:")) return null;
+
+  try {
+    return new URL(value, pageUrl).toString();
+  } catch {
+    return null;
+  }
+}
+
+function fromSrcSet(srcset: string | undefined | null, pageUrl: string): string | null {
+  if (!srcset) return null;
+  const first = srcset
+    .split(",")
+    .map((s) => s.trim().split(" ")[0])
+    .find(Boolean);
+  return resolveUrl(first, pageUrl);
+}
+
+function extractElementThumbnail(
+  $: cheerio.CheerioAPI,
+  $el: cheerio.Cheerio<AnyNode>,
+  selectors: { thumbnail?: string },
+  pageUrl: string,
+  fallbackImage: string | null
+): string | null {
+  const selectorChain = [
+    selectors.thumbnail,
+    "figure img",
+    "picture img",
+    "img",
+    "picture source",
+  ].filter(Boolean) as string[];
+
+  for (const selector of selectorChain) {
+    const node = $el.find(selector).first();
+    if (!node.length) continue;
+
+    const src = node.attr("src") || node.attr("data-src") || node.attr("data-lazy-src");
+    const srcset = node.attr("srcset") || node.attr("data-srcset");
+
+    const normalizedSrc = resolveUrl(src, pageUrl);
+    if (normalizedSrc) return normalizedSrc;
+
+    const normalizedSet = fromSrcSet(srcset, pageUrl);
+    if (normalizedSet) return normalizedSet;
+  }
+
+  const inlineStyle = $el.attr("style") || "";
+  const match = inlineStyle.match(/background-image:\s*url\(([^)]+)\)/i);
+  if (match?.[1]) {
+    const raw = match[1].replace(/["']/g, "");
+    const normalized = resolveUrl(raw, pageUrl);
+    if (normalized) return normalized;
+  }
+
+  return fallbackImage;
+}
 
 /**
  * Fetch an HTML page and extract items using CSS selectors.
@@ -36,6 +98,11 @@ export async function fetchHtml(
   const html = await res.text();
   const $ = cheerio.load(html);
   const items: ParsedItem[] = [];
+  const pageOgImage = resolveUrl(
+    $("meta[property='og:image']").attr("content") ||
+      $("meta[name='twitter:image']").attr("content"),
+    pageUrl
+  );
 
   $(selectors.articleContainer).each((_i, el) => {
     const $el = $(el);
@@ -45,11 +112,7 @@ export async function fetchHtml(
 
     if (!title || !link) return;
 
-    // Resolve relative URLs
-    if (link.startsWith("/")) {
-      const base = new URL(pageUrl);
-      link = `${base.protocol}//${base.host}${link}`;
-    }
+    link = resolveUrl(link, pageUrl) || link;
 
     const summary = selectors.summary
       ? $el.find(selectors.summary).first().text().trim().slice(0, 280) || null
@@ -62,9 +125,7 @@ export async function fetchHtml(
     // If parsing fails, use current date
     const publishedAt = isNaN(pubDate.getTime()) ? new Date() : pubDate;
 
-    const thumbnail = selectors.thumbnail
-      ? $el.find(selectors.thumbnail).first().attr("src") || null
-      : null;
+    const thumbnail = extractElementThumbnail($, $el, selectors, pageUrl, pageOgImage);
 
     const topics = tagTopics(title, summary);
 

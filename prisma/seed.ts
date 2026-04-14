@@ -265,7 +265,87 @@ const SOURCES = [
     tags: ["development", "community", "programming"],
   },
 
-  // ─── Video Channels (3) ───────────────────────────────────────────
+  // ─── Product/Industry + Tooling + Podcasts (10) ──────────────────
+  {
+    name: "NVIDIA Developer Blog",
+    type: "rss" as const,
+    url: "https://developer.nvidia.com/blog/feed/",
+    trustTier: "official_vendor" as const,
+    tags: ["ai", "gpu", "developer tooling", "industry"],
+  },
+  {
+    name: "AWS Machine Learning Blog",
+    type: "rss" as const,
+    url: "https://aws.amazon.com/blogs/machine-learning/feed/",
+    trustTier: "official_vendor" as const,
+    tags: ["ai", "ml", "cloud", "industry"],
+  },
+  {
+    name: "Microsoft Research",
+    type: "rss" as const,
+    url: "https://www.microsoft.com/en-us/research/feed/",
+    trustTier: "research_university" as const,
+    tags: ["ai", "research", "ml", "industry"],
+  },
+  {
+    name: "Google Research Blog",
+    type: "rss" as const,
+    url: "https://research.google/blog/rss/",
+    trustTier: "official_vendor" as const,
+    tags: ["ai", "research", "google", "papers"],
+  },
+  {
+    name: "Hugging Face Blog",
+    type: "rss" as const,
+    url: "https://huggingface.co/blog/feed.xml",
+    trustTier: "official_vendor" as const,
+    tags: ["ai", "open source", "llm", "models"],
+  },
+  {
+    name: "Figma Blog",
+    type: "rss" as const,
+    url: "https://www.figma.com/blog/rss.xml",
+    trustTier: "official_vendor" as const,
+    tags: ["design", "product", "ui", "ux"],
+  },
+  {
+    name: "Vercel Blog",
+    type: "rss" as const,
+    url: "https://vercel.com/blog/rss.xml",
+    trustTier: "official_vendor" as const,
+    tags: ["frontend", "performance", "nextjs", "tooling"],
+  },
+  {
+    name: "React Blog",
+    type: "rss" as const,
+    url: "https://react.dev/blog/rss.xml",
+    trustTier: "official_vendor" as const,
+    tags: ["frontend", "react", "development", "tooling"],
+  },
+  {
+    name: "Chrome Developers",
+    type: "rss" as const,
+    url: "https://developer.chrome.com/blog/rss.xml",
+    trustTier: "official_vendor" as const,
+    tags: ["frontend", "web platform", "performance", "tooling"],
+  },
+  {
+    name: "Practical AI Podcast",
+    type: "rss" as const,
+    url: "https://changelog.com/practicalai/feed",
+    trustTier: "influencer" as const,
+    tags: ["ai", "podcast", "ml", "industry"],
+  },
+
+  // ─── Video Channels (4) ───────────────────────────────────────────
+  {
+    name: "Fireship",
+    type: "youtube" as const,
+    url: "https://www.youtube.com/feeds/videos.xml?channel_id=UCsBjURrPoezykLs9EqgamOA",
+    trustTier: "influencer" as const,
+    tags: ["development", "ai", "tooling", "youtube"],
+    channelId: "UCsBjURrPoezykLs9EqgamOA",
+  },
   {
     name: "Veritasium",
     type: "youtube" as const,

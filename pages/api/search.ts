@@ -1,10 +1,16 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import prisma from "@/lib/prisma";
+import { classifyContent } from "@/lib/content-filter";
+import { applyPublicCors } from "@/lib/api/cors";
 
 export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
+  if (applyPublicCors(req, res)) {
+    return;
+  }
+
   if (req.method !== "GET") {
     return res.status(405).json({ error: "Method not allowed" });
   }
@@ -39,8 +45,13 @@ export default async function handler(
       prisma.item.count({ where }),
     ]);
 
+    // Remove spam / restricted / off-topic items from search results
+    const allowedItems = items.filter((item) =>
+      classifyContent(item.title, item.summary).allowed
+    );
+
     return res.status(200).json({
-      items,
+      items: allowedItems,
       pagination: { page, limit, total, totalPages: Math.ceil(total / limit) },
     });
   } catch (e) {
