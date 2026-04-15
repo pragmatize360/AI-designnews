@@ -7,6 +7,7 @@ const FILTERS = {
     sections: ["official", "press", "creators"],
     itemTypes: ["article", "video", "paper", "release"],
     contentCategories: CONTENT_CATEGORIES,
+    focusAreas: ["research", "design", "frontend", "product", "creators", "podcasts"],
     queryParams: {
       page: "1-based page number",
       limit: "page size, max 50",
@@ -16,6 +17,7 @@ const FILTERS = {
       topic: "exact topic string stored on item",
       sourceId: "source id",
       search: "free text search on title, summary, topics",
+      focusArea: "research | design | frontend | product | creators | podcasts",
     },
   },
   search: {
