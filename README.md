@@ -177,15 +177,116 @@ Access at `/admin` with your admin token. Features:
 - 📡 **Sources**: Enable/disable, re-run ingestion per source
 - 🔄 **Ingestion Runs**: View history, stats, and error logs
 
-## Figma Integration
+## Figma Consumption
 
-For direct plugin reads, call the production API base URL:
+AI Design News exposes a single stable endpoint for Figma Sites and plugins:
 
-- `https://ai-designnews.vercel.app/api/items?limit=20&page=1`
+```
+GET https://ai-designnews.vercel.app/api/items
+```
+
+CORS headers are included on every response so the endpoint can be called directly from browser-based Figma runtimes.
+
+### Response schema
+
+```json
+{
+  "items": [
+    {
+      "id": "clxxx",
+      "title": "…",
+      "summary": "…",
+      "type": "article | video | paper | release",
+      "publishedAt": "2024-01-15T10:00:00.000Z",
+      "thumbnailUrl": "https://…",
+      "topics": ["design", "ux"],
+      "contentCategory": "design | ai | dev | business",
+      "source": { "name": "…", "trustTier": "…", "type": "…", "tags": ["…"] },
+      "videoMeta": null,
+      "pinned": false,
+      "score": 0.85
+    }
+  ],
+  "pagination": {
+    "page": 1,
+    "limit": 20,
+    "total": 5163,
+    "totalPages": 259
+  }
+}
+```
+
+### Query parameters
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `page` | integer | Page number (1-based, default: 1) |
+| `limit` | integer | Items per page (max 50, default: 20) |
+| `type` | string | `article` \| `video` \| `paper` \| `release` |
+| `section` | string | `official` \| `press` \| `creators` |
+| `focusArea` | string | See focus area table below |
+| `contentCategory` | string | `design` \| `ai` \| `dev` \| `business` |
+| `topic` | string | Exact topic string, e.g. `large language models` |
+| `sourceId` | string | Filter by source ID |
+| `search` | string | Full-text search on title, summary, topics |
+
+### focusArea values
+
+| focusArea | What it returns |
+|-----------|----------------|
+| `research` | Items with research topics or from research_university sources |
+| `design` | Items with design/UX/UI topics or from design-tagged sources |
+| `frontend` | Items with frontend/web-dev topics or from frontend-tagged sources |
+| `product` | Items with product/business/industry topics |
+| `creators` | YouTube videos and influencer/creator sources |
+| `podcasts` | Items from podcast-tagged sources |
+
+### Example query strings for Figma Sites
+
+```
+# All videos (YouTube + video type)
+https://ai-designnews.vercel.app/api/items?type=video&limit=20&page=1
+
+# Articles only
+https://ai-designnews.vercel.app/api/items?type=article&limit=20&page=1
+
+# Feature updates / product releases
+https://ai-designnews.vercel.app/api/items?type=release&limit=20&page=1
+
+# White papers and research papers
+https://ai-designnews.vercel.app/api/items?type=paper&limit=20&page=1
+
+# Research focus area
+https://ai-designnews.vercel.app/api/items?focusArea=research&limit=20&page=1
+
+# Design / UX focus area
+https://ai-designnews.vercel.app/api/items?focusArea=design&limit=20&page=1
+
+# Frontend / dev tooling focus area
+https://ai-designnews.vercel.app/api/items?focusArea=frontend&limit=20&page=1
+
+# Product / industry focus area
+https://ai-designnews.vercel.app/api/items?focusArea=product&limit=20&page=1
+
+# YouTube creators and influencers
+https://ai-designnews.vercel.app/api/items?focusArea=creators&limit=20&page=1
+
+# Podcasts and newsletters
+https://ai-designnews.vercel.app/api/items?focusArea=podcasts&limit=20&page=1
+
+# Combine: design articles only
+https://ai-designnews.vercel.app/api/items?focusArea=design&type=article&limit=20&page=1
+
+# Load page 2 of videos
+https://ai-designnews.vercel.app/api/items?type=video&limit=20&page=2
+```
+
+### Other public read endpoints
+
+In addition to `/api/items`, these public GET endpoints also support CORS:
+
 - `https://ai-designnews.vercel.app/api/sources?limit=50&page=1`
 - `https://ai-designnews.vercel.app/api/ingest/status`
-
-These public GET endpoints include CORS headers and can be consumed by browser-based plugin runtimes.
 
 ## Constraints & Ethics
 

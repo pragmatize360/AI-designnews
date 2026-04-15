@@ -9,11 +9,48 @@ import {
 import type { TrustTier } from "@prisma/client";
 import { applyPublicCors } from "@/lib/api/cors";
 
+/**
+ * focusArea → Prisma OR conditions mapping.
+ * Each area maps to a combination of item topics and/or source trustTier/type/tags.
+ */
+const FOCUS_AREA_CONDITIONS: Record<string, Record<string, unknown>[]> = {
+  research: [
+    { topics: { hasSome: ["research", "ai safety", "machine learning", "large language models", "computer vision", "nlp", "arxiv"] } },
+    { source: { trustTier: "research_university" } },
+    { source: { tags: { hasSome: ["research", "academic", "arxiv", "paper"] } } },
+  ],
+  design: [
+    { topics: { hasSome: ["design", "ux", "ui", "product design", "user experience", "interaction design", "typography", "accessibility"] } },
+    { source: { tags: { hasSome: ["design", "ux", "ui", "figma", "product design"] } } },
+  ],
+  frontend: [
+    { topics: { hasSome: ["frontend", "web development", "tooling", "javascript", "typescript", "css", "react", "nextjs", "open source"] } },
+    { source: { tags: { hasSome: ["frontend", "tooling", "web development", "javascript", "css", "react"] } } },
+  ],
+  product: [
+    { topics: { hasSome: ["product", "business", "industry", "startup", "saas", "enterprise", "roadmap"] } },
+    { source: { tags: { hasSome: ["business", "industry", "product", "startup", "saas"] } } },
+  ],
+  creators: [
+    { source: { type: "youtube" } },
+    { source: { trustTier: "influencer" } },
+    { type: "video" },
+  ],
+  podcasts: [
+    { source: { tags: { hasSome: ["podcast", "newsletter", "audio"] } } },
+    { source: { url: { contains: "podcast" } } },
+    { source: { url: { contains: "feed" } } },
+  ],
+};
+
+const FOCUS_AREAS = Object.keys(FOCUS_AREA_CONDITIONS);
+
 const AVAILABLE_FILTERS = {
   sections: ["official", "press", "creators"],
   itemTypes: ["article", "video", "paper", "release"],
   contentCategories: CONTENT_CATEGORIES,
-  queryParams: ["page", "limit", "section", "type", "contentCategory", "topic", "sourceId", "search"],
+  focusAreas: FOCUS_AREAS,
+  queryParams: ["page", "limit", "section", "type", "contentCategory", "topic", "sourceId", "search", "focusArea"],
 };
 
 export default async function handler(
@@ -37,42 +74,62 @@ export default async function handler(
     const topic = req.query.topic as string | undefined;
     const sourceId = req.query.sourceId as string | undefined;
     const search = req.query.search as string | undefined;
+    const focusArea = req.query.focusArea as string | undefined;
 
-    const where: Record<string, unknown> = {};
+    // Build individual AND clauses so we can combine section, focusArea, and other
+    // filters without overwriting each other.
+    const andClauses: Record<string, unknown>[] = [];
 
     if (sourceId) {
-      where.sourceId = sourceId;
+      andClauses.push({ sourceId });
     }
 
     if (section === "official") {
-      where.source = { trustTier: "official_vendor" };
+      andClauses.push({ source: { trustTier: "official_vendor" } });
     } else if (section === "press") {
-      where.source = { trustTier: { in: ["reputed_press", "research_university"] } };
+      andClauses.push({ source: { trustTier: { in: ["reputed_press", "research_university"] } } });
     } else if (section === "creators") {
-      where.source = { trustTier: "influencer" };
+      andClauses.push({ source: { trustTier: "influencer" } });
     }
 
     if (type) {
-      where.type = type;
+      andClauses.push({ type });
     }
 
     if (topic) {
-      where.topics = { has: topic };
+      andClauses.push({ topics: { has: topic } });
     }
 
     if (search) {
       const q = search.trim();
-      where.OR = [
-        { title: { contains: q, mode: "insensitive" } },
-        { summary: { contains: q, mode: "insensitive" } },
-        { topics: { has: q.toLowerCase() } },
-      ];
+      andClauses.push({
+        OR: [
+          { title: { contains: q, mode: "insensitive" } },
+          { summary: { contains: q, mode: "insensitive" } },
+          { topics: { has: q.toLowerCase() } },
+        ],
+      });
     }
+
+    if (focusArea && FOCUS_AREA_CONDITIONS[focusArea]) {
+      andClauses.push({ OR: FOCUS_AREA_CONDITIONS[focusArea] });
+    }
+
+    // Collapse into a single Prisma where object
+    const where: Record<string, unknown> =
+      andClauses.length === 0
+        ? {}
+        : andClauses.length === 1
+        ? andClauses[0]
+        : { AND: andClauses };
+
+    // Get accurate total count from DB (before in-memory content filter)
+    const totalDb = await prisma.item.count({ where });
 
     const items = await prisma.item.findMany({
       where,
       include: {
-        source: { select: { name: true, trustTier: true, type: true } },
+        source: { select: { name: true, trustTier: true, type: true, tags: true } },
         videoMeta: true,
         curations: { where: { pinned: true } },
       },
@@ -123,8 +180,11 @@ export default async function handler(
       pagination: {
         page,
         limit,
-        total: allowedItems.length,
-        totalPages: Math.ceil(allowedItems.length / limit),
+        // totalDb reflects the full DB count for the applied filters — use this
+        // for "Load More" / page navigation. The actual items on this page may be
+        // slightly fewer because of the in-memory content-quality filter.
+        total: totalDb,
+        totalPages: Math.ceil(totalDb / limit),
       },
       filters: AVAILABLE_FILTERS,
     });

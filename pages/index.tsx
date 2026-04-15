@@ -31,6 +31,20 @@ interface IngestionStatus {
   totalItems: number;
 }
 
+/** Safely fetch JSON; returns null on HTTP error or parse failure. */
+async function safeFetchJson<T>(url: string): Promise<{ data: T | null; error: string | null }> {
+  try {
+    const res = await fetch(url);
+    if (!res.ok) {
+      return { data: null, error: `HTTP ${res.status}` };
+    }
+    const data = await res.json() as T;
+    return { data, error: null };
+  } catch (e) {
+    return { data: null, error: e instanceof Error ? e.message : "Unknown error" };
+  }
+}
+
 export default function Home() {
   const [heroItems, setHeroItems] = useState<FeedItem[]>([]);
   const [officialItems, setOfficialItems] = useState<FeedItem[]>([]);
@@ -43,31 +57,50 @@ export default function Home() {
   const [stats, setStats] = useState<IngestionStatus | null>(null);
   const [filterType, setFilterType] = useState("");
   const [filterTopic, setFilterTopic] = useState("");
+  const [sectionErrors, setSectionErrors] = useState<string[]>([]);
 
   useEffect(() => {
     async function loadSections() {
-      try {
-        const [heroRes, officialRes, pressRes, videoRes, statusRes] = await Promise.all([
-          fetch("/api/items?limit=4&page=1"),
-          fetch("/api/items?section=official&limit=5"),
-          fetch("/api/items?section=press&limit=5"),
-          fetch("/api/items?type=video&limit=5"),
-          fetch("/api/ingest/status"),
+      const errors: string[] = [];
+
+      const [heroResult, officialResult, pressResult, videoResult, statusResult] =
+        await Promise.all([
+          safeFetchJson<SectionData>("/api/items?limit=4&page=1"),
+          safeFetchJson<SectionData>("/api/items?section=official&limit=5"),
+          safeFetchJson<SectionData>("/api/items?section=press&limit=5"),
+          safeFetchJson<SectionData>("/api/items?type=video&limit=5"),
+          safeFetchJson<IngestionStatus>("/api/ingest/status"),
         ]);
 
-        const hero: SectionData = await heroRes.json();
-        const official: SectionData = await officialRes.json();
-        const press: SectionData = await pressRes.json();
-        const videos: SectionData = await videoRes.json();
-        if (statusRes.ok) setStats(await statusRes.json());
-
-        setHeroItems(hero.items || []);
-        setOfficialItems(official.items || []);
-        setPressItems(press.items || []);
-        setVideoItems(videos.items || []);
-      } catch (e) {
-        console.error("Failed to load sections:", e);
+      if (heroResult.error) {
+        errors.push(`Top Stories: ${heroResult.error}`);
+      } else {
+        setHeroItems(heroResult.data?.items ?? []);
       }
+
+      if (officialResult.error) {
+        errors.push(`Official Updates: ${officialResult.error}`);
+      } else {
+        setOfficialItems(officialResult.data?.items ?? []);
+      }
+
+      if (pressResult.error) {
+        errors.push(`Latest Articles: ${pressResult.error}`);
+      } else {
+        setPressItems(pressResult.data?.items ?? []);
+      }
+
+      if (videoResult.error) {
+        errors.push(`Latest Videos: ${videoResult.error}`);
+      } else {
+        setVideoItems(videoResult.data?.items ?? []);
+      }
+
+      if (!statusResult.error && statusResult.data) {
+        setStats(statusResult.data);
+      }
+
+      setSectionErrors(errors);
       setLoading(false);
     }
 
@@ -83,11 +116,13 @@ export default function Home() {
       if (filterType) params.set("type", filterType);
       if (filterTopic) params.set("topic", filterTopic);
 
-      const res = await fetch(`/api/items?${params.toString()}`);
-      const data = await res.json();
-      if (data.items) {
-        setFeedItems((prev) => (page === 1 ? data.items : [...prev, ...data.items]));
-        setHasMore(page < data.pagination.totalPages);
+      const result = await safeFetchJson<{ items: FeedItem[]; pagination: { totalPages: number } }>(
+        `/api/items?${params.toString()}`
+      );
+      if (!result.error && result.data?.items) {
+        const items = result.data.items;
+        setFeedItems((prev) => (page === 1 ? items : [...prev, ...items]));
+        setHasMore(page < (result.data.pagination?.totalPages ?? 1));
       }
     } catch (e) {
       console.error("Failed to load feed:", e);
@@ -123,6 +158,22 @@ export default function Home() {
       <Header />
 
       <main>
+        {/* Error Banner — only shown when one or more sections failed to load */}
+        {sectionErrors.length > 0 && (
+          <div role="alert" style={{
+            background: "#fff3cd",
+            borderLeft: "4px solid #ffc107",
+            padding: "0.75rem 1rem",
+            margin: "0.5rem 1rem",
+            borderRadius: "4px",
+            fontSize: "0.875rem",
+            color: "#856404",
+          }}>
+            <strong>Some sections could not be loaded:</strong>{" "}
+            {sectionErrors.join(" · ")}
+          </div>
+        )}
+
         {/* Stats Bar */}
         {stats && (
           <section className="stats-bar">
