@@ -14,6 +14,8 @@ const TIER_WEIGHTS: Record<TrustTier, number> = {
  * Factors: recency, trust tier, engagement (video views/likes), topic match, design priority bonus.
  *
  * Design items (Level 1) receive a +25 priority boost so they surface first.
+ * Items with 5000+ views receive an additional high-engagement bonus (+40–60 pts)
+ * so popular articles, videos, and papers are promoted above purely-recent content.
  */
 export function scoreItem(item: {
   publishedAt: Date | string;
@@ -42,6 +44,11 @@ export function scoreItem(item: {
   const likes = item.metricsLikes || 0;
   const engagementScore = Math.min(20, Math.log10(views + 1) * 5 + Math.log10(likes + 1) * 3);
 
+  // High-engagement bonus: items with 5000+ views are prioritised above purely-recent items.
+  // Scaled so that 5k views = +40, 50k views = +50, 500k+ views = capped at +60.
+  const highEngagementBonus =
+    views >= 5000 ? Math.min(60, 40 + Math.log10(views / 5000) * 10) : 0;
+
   // Topic relevance bonus (more topics = slightly higher)
   const topicBonus = Math.min(10, (item.topics?.length || 0) * 2);
 
@@ -51,7 +58,7 @@ export function scoreItem(item: {
       ? 25
       : 0;
 
-  return recencyScore + tierScore + engagementScore + topicBonus + designBonus;
+  return recencyScore + tierScore + engagementScore + highEngagementBonus + topicBonus + designBonus;
 }
 
 /**

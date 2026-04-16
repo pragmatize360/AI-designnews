@@ -41,6 +41,16 @@ function enrichYouTubeMetadata(source: Source, item: ParsedItem): ParsedItem {
     extractYouTubeId(item.contentSnippet);
 
   if (!videoId) {
+    // For youtube sources, always force type=video even when video ID is not detected,
+    // so items are never accidentally stored as articles.
+    if (source.type === "youtube") {
+      return {
+        ...item,
+        type: "video",
+        // Preserve any existing videoMeta; do not fabricate one with a missing ID
+        videoMeta: item.videoMeta,
+      };
+    }
     return item;
   }
 
