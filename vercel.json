@@ -7,5 +7,15 @@
       "src": "next.config.js",
       "use": "@vercel/next"
     }
+  ],
+  "crons": [
+    {
+      "path": "/api/cron/ingest-hourly",
+      "schedule": "0 * * * *"
+    },
+    {
+      "path": "/api/cron/ingest-daily",
+      "schedule": "15 2 * * *"
+    }
   ]
 }

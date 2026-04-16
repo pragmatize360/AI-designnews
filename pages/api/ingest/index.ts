@@ -1,6 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import { isAdminAuthorized } from "@/lib/auth";
-import { runIngestion } from "@/lib/ingestion/run";
+import { runIngestion, type IngestionMode } from "@/lib/ingestion/run";
 
 export default async function handler(
   req: NextApiRequest,
@@ -16,8 +16,9 @@ export default async function handler(
 
   try {
     const sourceId = req.body?.sourceId as string | undefined;
-    const runId = await runIngestion(sourceId);
-    return res.status(200).json({ message: "Ingestion started", runId });
+    const mode = (req.body?.mode as IngestionMode | undefined) ?? "daily";
+    const { runId, skipped } = await runIngestion(sourceId, mode);
+    return res.status(200).json({ message: skipped ? "Ingestion already running" : "Ingestion started", runId, skipped });
   } catch (e) {
     console.error("Error triggering ingestion:", e);
     return res.status(500).json({ error: "Internal server error" });

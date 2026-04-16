@@ -1,14 +1,18 @@
 /**
  * Content relevance filter for AI Design News.
  *
- * Priority levels:
- *  Level 1 — Design (product, UX, visual, brand, motion — always passes if matched)
- *  Level 2 — AI / ML signals
- *  Level 3 — Software development / engineering
- *  Level 4 — Corporate / business use of AI products
+ * Audience: Designers + vibe coders who care about AI and frontend tooling.
  *
- * An item only needs to match ONE level to be allowed.
- * Spam / restricted content is blocked regardless of any match.
+ * Hard requirements for any item to be allowed:
+ *  1. Must have a design/UX/UI signal.
+ *  2. Must also have an applied AI signal OR a frontend/tooling signal.
+ *
+ * Special cases:
+ *  - Papers: additionally require applied UX/HCI/product relevance.
+ *  - Podcasts: same design + AI/frontend rule (no special exemption).
+ *  - Generic AI news without design context: rejected.
+ *
+ * Spam / restricted content is blocked unconditionally.
  */
 
 // ── LEVEL 1 — Design signals (highest priority) ──────────────────────────────
@@ -264,6 +268,111 @@ const BUSINESS_SIGNALS = [
   "survey result",
 ];
 
+// ── Audience gate — frontend/tooling signals ──────────────────────────────────
+
+/**
+ * Frontend + design-tooling signals.
+ * An item must match DESIGN_SIGNALS **and** (AI_SIGNALS **or** these) to be allowed.
+ * Intentionally includes design tools (figma, framer …) so that design-tool news
+ * naturally satisfies the tooling side of the AND gate.
+ */
+const FRONTEND_TOOLING_SIGNALS = [
+  // Design-to-code / design authoring tools
+  "figma",
+  "framer",
+  "webflow",
+  "storybook",
+  "principle",
+  "protopie",
+  "invision",
+  "zeplin",
+  "spline",
+  "rive ",
+  "lottie",
+  "sketch app",
+  "affinity designer",
+  "adobe xd",
+  "canva",
+  // Frontend frameworks / languages
+  "react ",
+  "next.js",
+  "typescript",
+  "javascript",
+  " css ",
+  "vue ",
+  "svelte",
+  "angular",
+  "tailwind",
+  "sass",
+  "less ",
+  // Build / tooling
+  "vite ",
+  "webpack",
+  " npm ",
+  " sdk",
+  "plugin",
+  "open source",
+  "open-source",
+  "package release",
+  // Component / design systems
+  "component library",
+  "design token",
+  "design system",
+  "design systems",
+  // Handoff / code-gen
+  "design to code",
+  "design to dev",
+  "design handoff",
+  "hand-off",
+  "code generation",
+  "code gen",
+  // Vibe coding / no-code
+  "vibe cod",
+  "no-code",
+  "low-code",
+  // Mobile/web tooling
+  "developer",
+  "frontend",
+  "web development",
+  "mobile app",
+  "responsive",
+  "framework",
+];
+
+// ── Paper-specific applied UX / HCI signals ───────────────────────────────────
+
+/**
+ * Papers must have a design signal AND one of these applied UX/HCI signals to pass.
+ * Pure ML/AI benchmarks without UI/interaction relevance are rejected.
+ */
+const APPLIED_UX_PAPER_SIGNALS = [
+  "hci",
+  "human-computer interaction",
+  "interface",
+  "interaction",
+  "usability",
+  "accessibility",
+  "a11y",
+  "user experience",
+  "user interface",
+  "user research",
+  "user study",
+  "user testing",
+  "design system",
+  "design systems",
+  "frontend",
+  "prototype",
+  "wireframe",
+  "ui generation",
+  "ui gen",
+  "generative ui",
+  "text-to-ui",
+  "natural language interface",
+  "conversational ui",
+  "voice interface",
+  "multimodal interface",
+];
+
 // ── Hard-block lists ─────────────────────────────────────────────────────────
 
 /**
@@ -346,18 +455,23 @@ export type ContentCategory = (typeof CONTENT_CATEGORIES)[number];
 /**
  * Classify an item as allowed or blocked based on its title + summary.
  *
- * Priority order:
- *  1. Design  (figma, ux, ui, typography, a11y, branding …)
- *  2. AI / ML
- *  3. Dev / engineering
- *  4. Business / corporate
+ * Hard requirements (audience: designers + vibe coders):
+ *  1. Must have a design/UX/UI signal.
+ *  2. Must also have an applied AI signal OR a frontend/tooling signal.
+ *  Papers additionally require an applied UX/HCI signal.
  *
- * @returns `{ allowed: true, category }` when the item should be stored,
+ * Generic AI news without design context is rejected.
+ *
+ * @param itemType  Optional Prisma ItemType string ("paper", "video", …).
+ *                  Pass this to enable stricter per-type rules.
+ *
+ * @returns `{ allowed: true, category }` when the item should be stored/shown,
  *          `{ allowed: false, reason }` when it should be discarded.
  */
 export function classifyContent(
   title: string,
-  summary?: string | null
+  summary?: string | null,
+  itemType?: string
 ): FilterResult {
   // Combine fields; pad with spaces so edge-anchored patterns don't collide
   const text = ` ${title} ${summary || ""} `.toLowerCase();
@@ -369,30 +483,35 @@ export function classifyContent(
     }
   }
 
-  // Level 1 — Design (highest priority, checked first) ─────────────────────
-  if (hasAnySignal(text, DESIGN_SIGNALS)) {
-    return { allowed: true, category: "design" };
+  const hasDesign = hasAnySignal(text, DESIGN_SIGNALS);
+  const hasAI = hasAnySignal(text, AI_SIGNALS);
+  const hasFrontend = hasAnySignal(text, FRONTEND_TOOLING_SIGNALS);
+
+  // Papers: require design + applied UX/HCI relevance ──────────────────────
+  if (itemType === "paper") {
+    if (hasDesign && hasAnySignal(text, APPLIED_UX_PAPER_SIGNALS)) {
+      return { allowed: true, category: "design" };
+    }
+    return {
+      allowed: false,
+      reason: "paper lacks applied UX/product/frontend relevance",
+    };
   }
 
-  // Level 2 — AI / ML ───────────────────────────────────────────────────────
-  if (hasAnySignal(text, AI_SIGNALS)) {
-    return { allowed: true, category: "ai" };
+  // Audience gate — must have design/UX/UI signal ──────────────────────────
+  if (!hasDesign) {
+    return { allowed: false, reason: "no design/UX/UI signal found" };
   }
 
-  // Level 3 — Software development ─────────────────────────────────────────
-  if (hasAnySignal(text, DEV_SIGNALS)) {
-    return { allowed: true, category: "dev" };
+  // Must also have applied AI signal OR frontend/tooling signal ─────────────
+  if (!hasAI && !hasFrontend) {
+    return {
+      allowed: false,
+      reason: "design content lacks AI or frontend/tooling context",
+    };
   }
 
-  // Level 4 — Business / corporate ─────────────────────────────────────────
-  if (hasAnySignal(text, BUSINESS_SIGNALS)) {
-    return { allowed: true, category: "business" };
-  }
-
-  return {
-    allowed: false,
-    reason: "no design / AI / dev / business signal found",
-  };
+  return { allowed: true, category: "design" };
 }
 
 export function matchesContentCategory(

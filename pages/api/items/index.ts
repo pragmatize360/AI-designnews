@@ -50,8 +50,11 @@ const AVAILABLE_FILTERS = {
   itemTypes: ["article", "video", "paper", "release"],
   contentCategories: CONTENT_CATEGORIES,
   focusAreas: FOCUS_AREAS,
-  queryParams: ["page", "limit", "section", "type", "contentCategory", "topic", "sourceId", "search", "focusArea"],
+  queryParams: ["page", "limit", "section", "type", "contentCategory", "topic", "sourceId", "search", "focusArea", "windowDays"],
 };
+
+/** Milliseconds in one day — used for the recency window calculation. */
+const MS_PER_DAY = 24 * 60 * 60 * 1000;
 
 export default async function handler(
   req: NextApiRequest,
@@ -68,6 +71,7 @@ export default async function handler(
   try {
     const page = Math.max(1, parseInt(req.query.page as string) || 1);
     const limit = Math.min(50, Math.max(1, parseInt(req.query.limit as string) || 20));
+    const windowDays = Math.max(1, parseInt(req.query.windowDays as string) || 180);
     const section = req.query.section as string | undefined;
     const type = req.query.type as string | undefined;
     const contentCategory = req.query.contentCategory as string | undefined;
@@ -76,9 +80,21 @@ export default async function handler(
     const search = req.query.search as string | undefined;
     const focusArea = req.query.focusArea as string | undefined;
 
+    // Recency window cutoff — default 180 days
+    const cutoff = new Date(Date.now() - windowDays * MS_PER_DAY);
+
     // Build individual AND clauses so we can combine section, focusArea, and other
     // filters without overwriting each other.
-    const andClauses: Record<string, unknown>[] = [];
+    const andClauses: Record<string, unknown>[] = [
+      // Items must fall within the recency window.
+      // Fall back to createdAt for items where publishedAt is not set.
+      {
+        OR: [
+          { publishedAt: { gte: cutoff } },
+          { createdAt: { gte: cutoff } },
+        ],
+      },
+    ];
 
     if (sourceId) {
       andClauses.push({ sourceId });
@@ -133,14 +149,14 @@ export default async function handler(
         videoMeta: true,
         curations: { where: { pinned: true } },
       },
-      orderBy: { publishedAt: "desc" },
+      orderBy: [{ publishedAt: "desc" }, { createdAt: "desc" }],
       skip: (page - 1) * limit,
       take: limit,
     });
 
     // Content filter — remove spam / restricted / off-topic items
     const allowedItems = items.filter((item) => {
-      const classification = classifyContent(item.title, item.summary);
+      const classification = classifyContent(item.title, item.summary, item.type);
       return (
         classification.allowed &&
         matchesContentCategory(item.title, item.summary, contentCategory)
@@ -149,7 +165,7 @@ export default async function handler(
 
     // Score and sort items
     const scored = allowedItems.map((item) => {
-      const classification = classifyContent(item.title, item.summary);
+      const classification = classifyContent(item.title, item.summary, item.type);
 
       return {
       ...item,
