@@ -1,10 +1,10 @@
 # AI News Hub 🤖📰
 
-A comprehensive AI news aggregation platform built with **Next.js 14**, **Prisma**, and **PostgreSQL**. Aggregates news from 50 trusted sources including RSS feeds, YouTube channels, and web pages.
+A comprehensive AI news aggregation platform built with **Next.js 14**, **Prisma**, and **PostgreSQL**. Aggregates news from 100+ trusted sources including RSS feeds, YouTube channels, and web pages.
 
 ## Features
 
-- **50 Pre-configured Sources**: AI/ML labs, design/UX publications, frontend/dev tooling blogs, product/industry coverage, YouTube creators, and podcast feeds
+- **100+ Pre-configured Sources**: AI/ML labs, design/UX publications, frontend/dev tooling blogs, product/industry coverage, YouTube creators (~54 channels), and podcast feeds
 - **Multi-format Ingestion**: RSS/Atom feeds, HTML parsing with CSS selectors, YouTube channel RSS
 - **Smart Deduplication**: Canonical hash based on normalized title + URL host + date
 - **Trust-based Scoring**: Official Vendor > Reputed Press > Research/University > Influencer
@@ -244,8 +244,10 @@ CORS headers are included on every response so the endpoint can be called direct
 ### Example query strings for Figma Sites
 
 ```
-# All videos (YouTube + video type)
-https://ai-designnews.vercel.app/api/items?type=video&limit=20&page=1
+# All videos from YouTube sources (grows as more channels are enabled)
+# Videos are sourced from YouTube channels via RSS ingestion.
+# After seeding and running ingestion the endpoint returns hundreds of video items.
+https://ai-designnews.vercel.app/api/items?type=video&limit=50&page=1
 
 # Articles only
 https://ai-designnews.vercel.app/api/items?type=article&limit=20&page=1
