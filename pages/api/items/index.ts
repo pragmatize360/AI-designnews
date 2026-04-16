@@ -53,6 +53,9 @@ const AVAILABLE_FILTERS = {
   queryParams: ["page", "limit", "section", "type", "contentCategory", "topic", "sourceId", "search", "focusArea", "windowDays"],
 };
 
+/** Milliseconds in one day — used for the recency window calculation. */
+const MS_PER_DAY = 24 * 60 * 60 * 1000;
+
 export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse
@@ -78,7 +81,7 @@ export default async function handler(
     const focusArea = req.query.focusArea as string | undefined;
 
     // Recency window cutoff — default 180 days
-    const cutoff = new Date(Date.now() - windowDays * 24 * 60 * 60 * 1000);
+    const cutoff = new Date(Date.now() - windowDays * MS_PER_DAY);
 
     // Build individual AND clauses so we can combine section, focusArea, and other
     // filters without overwriting each other.

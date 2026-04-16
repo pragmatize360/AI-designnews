@@ -298,7 +298,7 @@ const FRONTEND_TOOLING_SIGNALS = [
   "next.js",
   "typescript",
   "javascript",
-  " css",
+  " css ",
   "vue ",
   "svelte",
   "angular",
@@ -308,7 +308,7 @@ const FRONTEND_TOOLING_SIGNALS = [
   // Build / tooling
   "vite ",
   "webpack",
-  " npm",
+  " npm ",
   " sdk",
   "plugin",
   "open source",
