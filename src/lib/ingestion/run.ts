@@ -47,12 +47,8 @@ function enrichYouTubeMetadata(source: Source, item: ParsedItem): ParsedItem {
       return {
         ...item,
         type: "video",
-        videoMeta: item.videoMeta ?? {
-          channelName: source.name,
-          channelId: source.channelId || extractChannelId(source.url),
-          videoId: "",
-          duration: null,
-        },
+        // Preserve any existing videoMeta; do not fabricate one with a missing ID
+        videoMeta: item.videoMeta,
       };
     }
     return item;
