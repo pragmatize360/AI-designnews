@@ -23,27 +23,24 @@ export default async function handler(
   }
 
   try {
-    const created: string[] = [];
-    const skipped: string[] = [];
+    const existingSources = await prisma.source.findMany({
+      select: { name: true },
+    });
+    const existingNames = new Set(existingSources.map((s) => s.name));
 
-    for (const source of SOURCES) {
-      const existing = await prisma.source.findFirst({
-        where: { name: source.name },
-      });
+    const toCreate = SOURCES.filter((s) => !existingNames.has(s.name));
+    const skipped = SOURCES.filter((s) => existingNames.has(s.name)).map(
+      (s) => s.name
+    );
 
-      if (existing) {
-        skipped.push(source.name);
-        continue;
-      }
-
-      await prisma.source.create({ data: source });
-      created.push(source.name);
+    if (toCreate.length > 0) {
+      await prisma.source.createMany({ data: toCreate });
     }
 
     const totalInDb = await prisma.source.count();
 
     return res.status(200).json({
-      created,
+      created: toCreate.map((s) => s.name),
       skipped,
       totalInSeed: SOURCES.length,
       totalInDb,
