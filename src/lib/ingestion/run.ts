@@ -5,6 +5,8 @@ import { fetchYouTube } from "./youtube";
 import { classifyContent } from "../content-filter";
 import type { Source, SourceType } from "@prisma/client";
 
+export type IngestionMode = "hourly" | "daily";
+
 interface RunStats {
   total: number;
   inserted: number;
@@ -12,6 +14,9 @@ interface RunStats {
   filtered: number;
   errors: number;
 }
+
+/** How long (ms) we consider an active run "recent" for the overlap guard. */
+const OVERLAP_GUARD_MS = 55 * 60 * 1000; // 55 minutes
 
 const YOUTUBE_ID_RE = /(?:youtube\.com\/(?:watch\?v=|shorts\/|embed\/)|youtu\.be\/)([A-Za-z0-9_-]{11})/i;
 
@@ -68,9 +73,34 @@ function enrichYouTubeMetadata(source: Source, item: ParsedItem): ParsedItem {
 }
 
 /**
- * Run the full ingestion pipeline for all enabled sources, or a single source.
+ * Run the ingestion pipeline.
+ *
+ * @param sourceId  If set, only ingest this single source (admin manual trigger).
+ * @param mode      "hourly" → YouTube + official_vendor sources only.
+ *                  "daily"  → all enabled sources (default).
+ * @returns The IngestionRun id, or the id of the conflicting run if skipped.
  */
-export async function runIngestion(sourceId?: string): Promise<string> {
+export async function runIngestion(
+  sourceId?: string,
+  mode: IngestionMode = "daily"
+): Promise<{ runId: string; skipped: boolean }> {
+  // Overlap guard — skip if a run is already active within the guard window
+  const guardCutoff = new Date(Date.now() - OVERLAP_GUARD_MS);
+  const activeRun = await prisma.ingestionRun.findFirst({
+    where: {
+      status: "running",
+      startedAt: { gte: guardCutoff },
+    },
+    orderBy: { startedAt: "desc" },
+  });
+
+  if (activeRun) {
+    console.log(
+      `[ingestion] Overlap guard: run ${activeRun.id} already running since ${activeRun.startedAt.toISOString()}. Skipping.`
+    );
+    return { runId: activeRun.id, skipped: true };
+  }
+
   const run = await prisma.ingestionRun.create({
     data: {
       status: "running",
@@ -82,7 +112,7 @@ export async function runIngestion(sourceId?: string): Promise<string> {
   const errors: Array<{ source: string; error: string }> = [];
 
   try {
-    // Get enabled sources, skip degraded ones
+    // Build source query based on mode
     const where: Record<string, unknown> = {
       enabled: true,
       OR: [
@@ -90,10 +120,22 @@ export async function runIngestion(sourceId?: string): Promise<string> {
         { degradedUntil: { lt: new Date() } },
       ],
     };
+
     if (sourceId) {
       where.id = sourceId;
-      // When manually triggered, ignore degraded status
+      // When manually triggered for a specific source, ignore degraded status
       delete where.OR;
+    } else if (mode === "hourly") {
+      // Hourly smart subset: YouTube channels + official vendor sources only.
+      // The existing OR (degradedUntil check) is preserved via the top-level AND.
+      where.AND = [
+        {
+          OR: [
+            { type: "youtube" },
+            { trustTier: "official_vendor" },
+          ],
+        },
+      ];
     }
 
     const sources = await prisma.source.findMany({ where });
@@ -106,7 +148,7 @@ export async function runIngestion(sourceId?: string): Promise<string> {
 
         for (const item of items) {
           // Content relevance + spam filter
-          const filter = classifyContent(item.title, item.summary);
+          const filter = classifyContent(item.title, item.summary, item.type);
           if (!filter.allowed) {
             stats.filtered++;
             console.log(`[filter] Skipping "${item.title.slice(0, 80)}": ${filter.reason}`);
@@ -169,12 +211,12 @@ export async function runIngestion(sourceId?: string): Promise<string> {
       data: {
         finishedAt: new Date(),
         status,
-        stats: JSON.parse(JSON.stringify(stats)),
+        stats: JSON.parse(JSON.stringify({ ...stats, mode })),
         errors: errors.length > 0 ? JSON.parse(JSON.stringify(errors)) : undefined,
       },
     });
 
-    return run.id;
+    return { runId: run.id, skipped: false };
   } catch (e: unknown) {
     const msg = e instanceof Error ? e.message : String(e);
     await prisma.ingestionRun.update({
@@ -182,11 +224,11 @@ export async function runIngestion(sourceId?: string): Promise<string> {
       data: {
         finishedAt: new Date(),
         status: "failed",
-        stats: JSON.parse(JSON.stringify(stats)),
+        stats: JSON.parse(JSON.stringify({ ...stats, mode })),
         errors: JSON.parse(JSON.stringify([{ source: "pipeline", error: msg }])),
       },
     });
-    return run.id;
+    return { runId: run.id, skipped: false };
   }
 }
 

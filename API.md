@@ -17,6 +17,25 @@ Authorization: Bearer YOUR_ADMIN_TOKEN
 
 Set `ADMIN_TOKEN` in your `.env` file.
 
+Cron endpoints require:
+
+```
+Authorization: Bearer YOUR_CRON_SECRET
+# or
+GET /api/cron/ingest-hourly?secret=YOUR_CRON_SECRET
+```
+
+Set `CRON_SECRET` in your `.env` file.
+
+### Required Environment Variables
+
+| Variable | Used by | Description |
+|----------|---------|-------------|
+| `DATABASE_URL` | All | PostgreSQL connection string |
+| `DIRECT_URL` | Prisma | Direct (non-pooled) connection string |
+| `ADMIN_TOKEN` | Admin & ingestion endpoints | Bearer token for admin access |
+| `CRON_SECRET` | `/api/cron/*` | Secret for cron endpoint authentication |
+
 ---
 
 ## Public Endpoints
@@ -80,14 +99,26 @@ Get paginated content items.
 |-----------|------|---------|-------------|
 | `page` | number | 1 | Page number |
 | `limit` | number | 20 | Items per page (1-50) |
+| `windowDays` | number | 180 | Recency window in days. Items with `publishedAt` (or `createdAt` as fallback) older than this are excluded. |
 | `type` | string | - | Filter: `article`, `video`, `paper`, `release` |
-| `focusArea` | string | - | Filter by area: `ai-research`, `design-ux`, `frontend-dev`, `product-industry`, `youtube-creator`, `podcast-newsletter` |
-| `sortBy` | string | `score` | Sort: `score`, `date`, `views` |
+| `section` | string | - | Filter: `official`, `press`, `creators` |
+| `focusArea` | string | - | Filter by area: `research`, `design`, `frontend`, `product`, `creators`, `podcasts` |
+| `contentCategory` | string | - | Filter by category: `design`, `ai`, `dev`, `business` |
+| `topic` | string | - | Exact topic string match |
+| `sourceId` | string | - | Filter to a specific source |
+| `search` | string | - | Free-text search on title, summary, topics |
 
 **Example**
 
 ```bash
-curl "https://ai-designnews.vercel.app/api/items?type=video&focusArea=ai-research&limit=10"
+# Default 180-day window
+curl "https://ai-designnews.vercel.app/api/items?type=video&focusArea=design&limit=10"
+
+# Custom window (last 30 days)
+curl "https://ai-designnews.vercel.app/api/items?windowDays=30&focusArea=design"
+
+# Override to get all-time items (very large number)
+curl "https://ai-designnews.vercel.app/api/items?windowDays=3650"
 ```
 
 **Response**
@@ -213,6 +244,50 @@ curl "https://ai-designnews.vercel.app/api/filters"
 
 ---
 
+## Cron Endpoints
+
+These endpoints are called automatically by Vercel's cron scheduler. They can also be triggered manually for testing, but require a valid `CRON_SECRET`.
+
+**Authentication**: Pass the secret via `?secret=<CRON_SECRET>` query param **or** `Authorization: Bearer <CRON_SECRET>` header.
+
+### GET `/api/cron/ingest-hourly`
+
+Smart hourly ingestion: fetches only YouTube channels and official-vendor sources.
+
+**Schedule**: every hour (`0 * * * *`)
+
+```bash
+curl "https://ai-designnews.vercel.app/api/cron/ingest-hourly?secret=YOUR_CRON_SECRET"
+```
+
+**Response**
+
+```json
+{ "mode": "hourly", "runId": "clxyz...", "skipped": false }
+```
+
+If a run is already active (within the last 55 minutes), `skipped: true` is returned without starting a new run.
+
+---
+
+### GET `/api/cron/ingest-daily`
+
+Full daily sweep: fetches all enabled sources once per day.
+
+**Schedule**: daily at 02:15 UTC (`15 2 * * *`)
+
+```bash
+curl "https://ai-designnews.vercel.app/api/cron/ingest-daily?secret=YOUR_CRON_SECRET"
+```
+
+**Response**
+
+```json
+{ "mode": "daily", "runId": "clxyz...", "skipped": false }
+```
+
+---
+
 ## Ingestion Endpoints
 
 ### GET `/ingestion/status`
@@ -280,6 +355,7 @@ Content-Type: application/json
 ```json
 {
   "sourceIds": ["id1", "id2"],  // optional - specific sources
+  "mode": "daily",              // optional - "hourly" | "daily" (default: "daily")
   "fullRun": false              // optional - clear items before ingesting
 }
 ```
@@ -287,10 +363,17 @@ Content-Type: application/json
 **Example**
 
 ```bash
+# Full sweep (default)
 curl -X POST "https://ai-designnews.vercel.app/api/ingestion" \
   -H "Authorization: Bearer YOUR_TOKEN" \
   -H "Content-Type: application/json" \
-  -d '{"fullRun": false}'
+  -d '{"mode": "daily"}'
+
+# Hourly smart subset (YouTube + official_vendor only)
+curl -X POST "https://ai-designnews.vercel.app/api/ingestion" \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"mode": "hourly"}'
 ```
 
 ---
