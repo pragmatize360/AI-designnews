@@ -1,0 +1,28 @@
+{
+  "name": "ai-design-news-figma-plugin",
+  "version": "1.0.0",
+  "description": "Figma plugin to fetch and insert AI Design News content",
+  "main": "src/code.js",
+  "license": "MIT",
+  "keywords": [
+    "figma",
+    "plugin",
+    "design",
+    "content",
+    "ai",
+    "news"
+  ],
+  "author": {
+    "name": "AI Design News",
+    "url": "https://ai-designnews.vercel.app"
+  },
+  "scripts": {
+    "dev": "echo 'Edit src/code.js and src/ui.html then reload the plugin in Figma'",
+    "build": "echo 'Ready to deploy - no build step needed'"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/pragmatize360/AI-designnews.git",
+    "directory": "figma-plugin"
+  }
+}
