@@ -1,0 +1,448 @@
+[
+  {
+    "name": "OpenAI Blog",
+    "url": "https://openai.com/blog/rss.xml",
+    "type": "rss",
+    "trustTier": "official_vendor",
+    "tags": ["ai", "openai", "gpt", "llm", "research", "top"],
+    "priorityScore": 5,
+    "enabled": true
+  },
+  {
+    "name": "Anthropic News",
+    "url": "https://www.anthropic.com/rss.xml",
+    "type": "rss",
+    "trustTier": "official_vendor",
+    "tags": ["ai", "claude", "safety", "llm", "research", "top"],
+    "priorityScore": 5,
+    "enabled": true
+  },
+  {
+    "name": "Google AI Blog",
+    "url": "https://blog.research.google/feeds/posts/default",
+    "type": "rss",
+    "trustTier": "official_vendor",
+    "tags": ["ai", "google", "gemini", "research", "top"],
+    "priorityScore": 5,
+    "enabled": true
+  },
+  {
+    "name": "Google DeepMind Blog",
+    "url": "https://deepmind.google/blog/rss.xml",
+    "type": "rss",
+    "trustTier": "official_vendor",
+    "tags": ["ai", "deepmind", "research", "llm", "top"],
+    "priorityScore": 5,
+    "enabled": true
+  },
+  {
+    "name": "Microsoft AI Blog",
+    "url": "https://blogs.microsoft.com/ai/feed/",
+    "type": "rss",
+    "trustTier": "official_vendor",
+    "tags": ["ai", "microsoft", "copilot", "azure", "top"],
+    "priorityScore": 5,
+    "enabled": true
+  },
+  {
+    "name": "Figma Blog",
+    "url": "https://www.figma.com/blog/rss.xml",
+    "type": "rss",
+    "trustTier": "official_vendor",
+    "tags": ["design", "figma", "ui", "ux", "design-tools", "top"],
+    "priorityScore": 5,
+    "enabled": true
+  },
+  {
+    "name": "Adobe Tech Blog",
+    "url": "https://blog.adobe.com/en/topics/technology.rss",
+    "type": "rss",
+    "trustTier": "official_vendor",
+    "tags": ["design", "adobe", "ai", "creative", "tools", "top"],
+    "priorityScore": 5,
+    "enabled": true
+  },
+  {
+    "name": "Hugging Face Blog",
+    "url": "https://huggingface.co/blog/feed.xml",
+    "type": "rss",
+    "trustTier": "official_vendor",
+    "tags": ["ai", "open-source", "llm", "models", "ml", "top"],
+    "priorityScore": 5,
+    "enabled": true
+  },
+  {
+    "name": "Meta AI Blog",
+    "url": "https://ai.facebook.com/blog/feed/",
+    "type": "rss",
+    "trustTier": "official_vendor",
+    "tags": ["ai", "meta", "llm", "research", "top"],
+    "priorityScore": 5,
+    "enabled": true
+  },
+  {
+    "name": "Vercel Blog",
+    "url": "https://vercel.com/blog/rss.xml",
+    "type": "rss",
+    "trustTier": "official_vendor",
+    "tags": ["frontend", "nextjs", "performance", "tooling", "top"],
+    "priorityScore": 5,
+    "enabled": true
+  },
+  {
+    "name": "Stability AI News",
+    "url": "https://stability.ai/news/rss",
+    "type": "rss",
+    "trustTier": "official_vendor",
+    "tags": ["ai", "image-generation", "diffusion", "creative"],
+    "priorityScore": 4,
+    "enabled": true
+  },
+  {
+    "name": "Mistral AI News",
+    "url": "https://mistral.ai/news/?feed=rss",
+    "type": "rss",
+    "trustTier": "official_vendor",
+    "tags": ["ai", "llm", "open-source"],
+    "priorityScore": 4,
+    "enabled": true
+  },
+  {
+    "name": "Cohere Blog",
+    "url": "https://cohere.com/blog/rss",
+    "type": "rss",
+    "trustTier": "official_vendor",
+    "tags": ["ai", "llm", "enterprise", "nlp"],
+    "priorityScore": 4,
+    "enabled": true
+  },
+  {
+    "name": "Notion AI Blog",
+    "url": "https://www.notion.so/blog/rss.xml",
+    "type": "rss",
+    "trustTier": "official_vendor",
+    "tags": ["ai", "productivity", "tools", "design"],
+    "priorityScore": 4,
+    "enabled": true
+  },
+  {
+    "name": "Framer Blog",
+    "url": "https://www.framer.com/blog/feed",
+    "type": "rss",
+    "trustTier": "official_vendor",
+    "tags": ["design", "prototyping", "frontend", "ai", "tools"],
+    "priorityScore": 4,
+    "enabled": true
+  },
+  {
+    "name": "Webflow Blog",
+    "url": "https://webflow.com/blog/rss.xml",
+    "type": "rss",
+    "trustTier": "official_vendor",
+    "tags": ["design", "no-code", "frontend", "tools"],
+    "priorityScore": 4,
+    "enabled": true
+  },
+  {
+    "name": "React Blog",
+    "url": "https://react.dev/blog/rss.xml",
+    "type": "rss",
+    "trustTier": "official_vendor",
+    "tags": ["frontend", "react", "javascript", "tooling"],
+    "priorityScore": 4,
+    "enabled": true
+  },
+  {
+    "name": "Canva Design Blog",
+    "url": "https://www.canva.com/learn/design/rss.xml",
+    "type": "rss",
+    "trustTier": "official_vendor",
+    "tags": ["design", "canva", "ai", "creative", "tools"],
+    "priorityScore": 3,
+    "enabled": true
+  },
+  {
+    "name": "MIT Technology Review",
+    "url": "https://www.technologyreview.com/feed/",
+    "type": "rss",
+    "trustTier": "reputed_press",
+    "tags": ["ai", "technology", "research", "top"],
+    "priorityScore": 5,
+    "enabled": true
+  },
+  {
+    "name": "Wired",
+    "url": "https://www.wired.com/feed/rss",
+    "type": "rss",
+    "trustTier": "reputed_press",
+    "tags": ["tech", "culture", "ai", "top"],
+    "priorityScore": 5,
+    "enabled": true
+  },
+  {
+    "name": "Nielsen Norman Group",
+    "url": "https://www.nngroup.com/feed/rss/",
+    "type": "rss",
+    "trustTier": "reputed_press",
+    "tags": ["ux", "research", "usability", "design", "top"],
+    "priorityScore": 5,
+    "enabled": true
+  },
+  {
+    "name": "Smashing Magazine",
+    "url": "https://www.smashingmagazine.com/feed/",
+    "type": "rss",
+    "trustTier": "reputed_press",
+    "tags": ["design", "ux", "frontend", "web"],
+    "priorityScore": 4,
+    "enabled": true
+  },
+  {
+    "name": "Fast Company Design",
+    "url": "https://www.fastcompany.com/design/rss",
+    "type": "rss",
+    "trustTier": "reputed_press",
+    "tags": ["design", "innovation", "ux", "business"],
+    "priorityScore": 4,
+    "enabled": true
+  },
+  {
+    "name": "TechCrunch AI",
+    "url": "https://techcrunch.com/category/artificial-intelligence/feed/",
+    "type": "rss",
+    "trustTier": "reputed_press",
+    "tags": ["ai", "tech", "startups", "industry"],
+    "priorityScore": 4,
+    "enabled": true
+  },
+  {
+    "name": "The Verge",
+    "url": "https://www.theverge.com/rss/index.xml",
+    "type": "rss",
+    "trustTier": "reputed_press",
+    "tags": ["tech", "ai", "design", "culture"],
+    "priorityScore": 4,
+    "enabled": true
+  },
+  {
+    "name": "A List Apart",
+    "url": "https://alistapart.com/articles/feed/",
+    "type": "rss",
+    "trustTier": "reputed_press",
+    "tags": ["design", "frontend", "ux", "web"],
+    "priorityScore": 4,
+    "enabled": true
+  },
+  {
+    "name": "UX Collective",
+    "url": "https://uxdesign.cc/feed",
+    "type": "rss",
+    "trustTier": "reputed_press",
+    "tags": ["ux", "design", "research", "product"],
+    "priorityScore": 4,
+    "enabled": true
+  },
+  {
+    "name": "Design Systems Repo",
+    "url": "https://designsystemsrepo.com/feed.xml",
+    "type": "rss",
+    "trustTier": "reputed_press",
+    "tags": ["design-systems", "components", "ux", "frontend"],
+    "priorityScore": 4,
+    "enabled": true
+  },
+  {
+    "name": "CSS-Tricks",
+    "url": "https://css-tricks.com/feed/",
+    "type": "rss",
+    "trustTier": "reputed_press",
+    "tags": ["frontend", "css", "design", "web"],
+    "priorityScore": 3,
+    "enabled": true
+  },
+  {
+    "name": "arXiv cs.HC (HCI)",
+    "url": "https://arxiv.org/rss/cs.HC",
+    "type": "rss",
+    "trustTier": "research_university",
+    "tags": ["hci", "research", "ux", "interaction", "top"],
+    "priorityScore": 5,
+    "enabled": true
+  },
+  {
+    "name": "arXiv cs.AI",
+    "url": "https://arxiv.org/rss/cs.AI",
+    "type": "rss",
+    "trustTier": "research_university",
+    "tags": ["ai", "research", "papers", "top"],
+    "priorityScore": 5,
+    "enabled": true
+  },
+  {
+    "name": "Papers With Code",
+    "url": "https://paperswithcode.com/latest",
+    "type": "rss",
+    "trustTier": "research_university",
+    "tags": ["ai", "research", "papers", "ml", "code"],
+    "priorityScore": 4,
+    "enabled": true
+  },
+  {
+    "name": "ACM TOCHI",
+    "url": "https://dl.acm.org/action/showFeed?type=etoc&feed=rss&jc=tochi",
+    "type": "rss",
+    "trustTier": "research_university",
+    "tags": ["hci", "research", "interaction", "usability", "top"],
+    "priorityScore": 5,
+    "enabled": true
+  },
+  {
+    "name": "Distill.pub",
+    "url": "https://distill.pub/rss.xml",
+    "type": "rss",
+    "trustTier": "research_university",
+    "tags": ["ai", "ml", "research", "visualization"],
+    "priorityScore": 4,
+    "enabled": true
+  },
+  {
+    "name": "Figma YouTube",
+    "url": "https://www.youtube.com/feeds/videos.xml?channel_id=UCQsVmhSa4X-G3lHlUtejzLA",
+    "type": "youtube",
+    "trustTier": "official_vendor",
+    "tags": ["design", "figma", "ui", "ux", "tutorial", "top"],
+    "priorityScore": 5,
+    "enabled": true,
+    "channelId": "UCQsVmhSa4X-G3lHlUtejzLA"
+  },
+  {
+    "name": "Google for Developers",
+    "url": "https://www.youtube.com/feeds/videos.xml?channel_id=UC295-Dw0tDd-hoAA9J5Y-7g",
+    "type": "youtube",
+    "trustTier": "official_vendor",
+    "tags": ["ai", "google", "developer", "tools", "top"],
+    "priorityScore": 5,
+    "enabled": true,
+    "channelId": "UC295-Dw0tDd-hoAA9J5Y-7g"
+  },
+  {
+    "name": "Microsoft Developer",
+    "url": "https://www.youtube.com/feeds/videos.xml?channel_id=UCsMica-v34Irf9KVTioWckQ",
+    "type": "youtube",
+    "trustTier": "official_vendor",
+    "tags": ["ai", "microsoft", "copilot", "developer", "tools", "top"],
+    "priorityScore": 5,
+    "enabled": true,
+    "channelId": "UCsMica-v34Irf9KVTioWckQ"
+  },
+  {
+    "name": "Hugging Face YouTube",
+    "url": "https://www.youtube.com/feeds/videos.xml?channel_id=UCHlNU7kIZhRgSbhHvFoy72w",
+    "type": "youtube",
+    "trustTier": "official_vendor",
+    "tags": ["ai", "llm", "open-source", "models", "top"],
+    "priorityScore": 5,
+    "enabled": true,
+    "channelId": "UCHlNU7kIZhRgSbhHvFoy72w"
+  },
+  {
+    "name": "Fireship",
+    "url": "https://www.youtube.com/feeds/videos.xml?channel_id=UCsBjURrPoezykLs9EqgamOA",
+    "type": "youtube",
+    "trustTier": "influencer",
+    "tags": ["frontend", "javascript", "ai", "developer", "tutorial", "top"],
+    "priorityScore": 5,
+    "enabled": true,
+    "channelId": "UCsBjURrPoezykLs9EqgamOA"
+  },
+  {
+    "name": "Andrej Karpathy",
+    "url": "https://www.youtube.com/feeds/videos.xml?channel_id=UCXUPKJO5MZQN11PqgIvyuvQ",
+    "type": "youtube",
+    "trustTier": "influencer",
+    "tags": ["ai", "llm", "research", "education", "top"],
+    "priorityScore": 5,
+    "enabled": true,
+    "channelId": "UCXUPKJO5MZQN11PqgIvyuvQ"
+  },
+  {
+    "name": "Kevin Powell",
+    "url": "https://www.youtube.com/feeds/videos.xml?channel_id=UCJZv4d5rbIKd4QHMPkcABCw",
+    "type": "youtube",
+    "trustTier": "influencer",
+    "tags": ["css", "frontend", "design", "web", "tutorial"],
+    "priorityScore": 4,
+    "enabled": true,
+    "channelId": "UCJZv4d5rbIKd4QHMPkcABCw"
+  },
+  {
+    "name": "Theo - t3.gg",
+    "url": "https://www.youtube.com/feeds/videos.xml?channel_id=UCbmNph6atAoGfqLoCL_duAg",
+    "type": "youtube",
+    "trustTier": "influencer",
+    "tags": ["frontend", "typescript", "react", "developer", "ai"],
+    "priorityScore": 4,
+    "enabled": true,
+    "channelId": "UCbmNph6atAoGfqLoCL_duAg"
+  },
+  {
+    "name": "Sam Altman",
+    "url": "https://www.youtube.com/feeds/videos.xml?channel_id=UC84q6KLXBS2EkE3g8Z6mVyg",
+    "type": "youtube",
+    "trustTier": "influencer",
+    "tags": ["ai", "openai", "industry", "founder"],
+    "priorityScore": 4,
+    "enabled": true,
+    "channelId": "UC84q6KLXBS2EkE3g8Z6mVyg"
+  },
+  {
+    "name": "Lex Fridman",
+    "url": "https://www.youtube.com/feeds/videos.xml?channel_id=UCSHZKyawb77ixDdsGog4iWA",
+    "type": "youtube",
+    "trustTier": "influencer",
+    "tags": ["ai", "research", "interviews", "technology"],
+    "priorityScore": 4,
+    "enabled": true,
+    "channelId": "UCSHZKyawb77ixDdsGog4iWA"
+  },
+  {
+    "name": "Matt Wolfe (AI Tools)",
+    "url": "https://www.youtube.com/feeds/videos.xml?channel_id=UCCez8nMFX7iNKBD2ioXfWcA",
+    "type": "youtube",
+    "trustTier": "influencer",
+    "tags": ["ai", "tools", "productivity", "review"],
+    "priorityScore": 4,
+    "enabled": true,
+    "channelId": "UCCez8nMFX7iNKBD2ioXfWcA"
+  },
+  {
+    "name": "DesignCourse",
+    "url": "https://www.youtube.com/feeds/videos.xml?channel_id=UCVyRiMvfUNMA1UPlDPzG5Ow",
+    "type": "youtube",
+    "trustTier": "influencer",
+    "tags": ["design", "ui", "ux", "frontend", "tutorial"],
+    "priorityScore": 4,
+    "enabled": true,
+    "channelId": "UCVyRiMvfUNMA1UPlDPzG5Ow"
+  },
+  {
+    "name": "Two Minute Papers",
+    "url": "https://www.youtube.com/feeds/videos.xml?channel_id=UCbfYPyITQ-7l4upoX8nvctg",
+    "type": "youtube",
+    "trustTier": "influencer",
+    "tags": ["ai", "research", "papers", "ml", "science"],
+    "priorityScore": 4,
+    "enabled": true,
+    "channelId": "UCbfYPyITQ-7l4upoX8nvctg"
+  },
+  {
+    "name": "Flux Academy",
+    "url": "https://www.youtube.com/feeds/videos.xml?channel_id=UCVmHAtJxrDMQPFMnJscc4Ag",
+    "type": "youtube",
+    "trustTier": "influencer",
+    "tags": ["design", "figma", "branding", "web-design", "tutorial"],
+    "priorityScore": 3,
+    "enabled": true,
+    "channelId": "UCVmHAtJxrDMQPFMnJscc4Ag"
+  }
+]
