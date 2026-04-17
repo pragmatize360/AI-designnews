@@ -59,7 +59,17 @@ Edit `.env` with your database connection string and admin token:
 DATABASE_URL="postgresql://user:password@host:5432/ai_news_hub"
 DIRECT_URL="postgresql://user:password@host:5432/ai_news_hub"
 ADMIN_TOKEN="your-secure-admin-token"
+CRON_SECRET="your-secure-cron-secret"
 ```
+
+**Required environment variables**
+
+| Variable | Description |
+|----------|-------------|
+| `DATABASE_URL` | PostgreSQL connection string |
+| `DIRECT_URL` | Direct (non-pooled) PostgreSQL connection string |
+| `ADMIN_TOKEN` | Bearer token for admin endpoints |
+| `CRON_SECRET` | Secret for `/api/cron/*` endpoints (query param `?secret=` or `Authorization: Bearer`) |
 
 ### 3. Set Up Database
 
@@ -119,34 +129,22 @@ curl -H "Authorization: Bearer YOUR_ADMIN_TOKEN" https://your-app.vercel.app/api
 
 ## Cron / Scheduled Ingestion
 
-### Option 1: Vercel Cron (recommended for Vercel deployments)
+The project ships with two Vercel cron jobs preconfigured in `vercel.json`:
 
-Create `vercel.json`:
+| Schedule | Endpoint | Behaviour |
+|----------|----------|-----------|
+| `0 * * * *` (hourly) | `/api/cron/ingest-hourly` | YouTube channels + official_vendor sources |
+| `15 2 * * *` (daily 02:15 UTC) | `/api/cron/ingest-daily` | All enabled sources |
 
-```json
-{
-  "crons": [{
-    "path": "/api/ingestion",
-    "schedule": "0 */2 * * *"
-  }]
-}
-```
+Both endpoints require a `CRON_SECRET` env var (Vercel passes it automatically if set in project settings).
 
-### Option 2: External Cron Service
-
-Use [cron-job.org](https://cron-job.org) or similar to POST to `/api/ingestion` every 2 hours:
+Manual trigger:
 
 ```bash
-curl -X POST -H "Authorization: Bearer YOUR_TOKEN" https://your-app.vercel.app/api/ingestion
+curl "https://your-app.vercel.app/api/cron/ingest-hourly?secret=YOUR_CRON_SECRET"
 ```
 
-### Option 3: System Cron
-
-```bash
-crontab -e
-# Add:
-0 */2 * * * curl -X POST -H "Authorization: Bearer YOUR_TOKEN" http://localhost:3000/api/ingestion
-```
+An **overlap guard** prevents concurrent runs: if a run is already active (within 55 minutes), the request returns `{ skipped: true }` immediately.
 
 ## Deployment to Vercel
 
@@ -222,6 +220,8 @@ CORS headers are included on every response so the endpoint can be called direct
 |-----------|------|-------------|
 | `page` | integer | Page number (1-based, default: 1) |
 | `limit` | integer | Items per page (max 50, default: 20) |
+| `windowDays` | integer | Recency window in days (default: 180). Items with `publishedAt >= cutoff` or `(publishedAt is null AND createdAt >= cutoff)` are included. |
+| `tier` | string | Pass `tier=all` to disable the default trustTier gate and include all sources. |
 | `type` | string | `article` \| `video` \| `paper` \| `release` |
 | `section` | string | `official` \| `press` \| `creators` |
 | `focusArea` | string | See focus area table below |
@@ -229,6 +229,19 @@ CORS headers are included on every response so the endpoint can be called direct
 | `topic` | string | Exact topic string, e.g. `large language models` |
 | `sourceId` | string | Filter by source ID |
 | `search` | string | Full-text search on title, summary, topics |
+
+### Default feed behaviour
+
+By default `/api/items` returns a **Varun Mayya–style** AI-in-tech+design feed:
+
+1. **Recency window** — only items published within the last 180 days (`windowDays=180`).
+2. **Top-tier sources only** — sources must have `trustTier` in `official_vendor`, `reputed_press`, `research_university`, or `influencer`.
+3. **Topic gate** — each item must match at least one AI-tools keyword (e.g. `claude`, `openai`, `gemini`, `llm`, `figma ai`) AND at least one design/build keyword (e.g. `design`, `ux`, `figma`, `frontend`, `react`).
+4. **Official bypass** — `official_vendor` sources tagged `top` (e.g. OpenAI, Anthropic, Google AI, Figma, Microsoft) bypass the topic gate and always appear.
+
+**Overrides**:
+- `?tier=all` — disables the trustTier restriction (shows all tiers).
+- `?windowDays=30` — narrows the recency window.
 
 ### focusArea values
 

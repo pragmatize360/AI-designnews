@@ -147,12 +147,20 @@ export async function runIngestion(
         stats.total += items.length;
 
         for (const item of items) {
-          // Content relevance + spam filter
-          const filter = classifyContent(item.title, item.summary, item.type);
-          if (!filter.allowed) {
-            stats.filtered++;
-            console.log(`[filter] Skipping "${item.title.slice(0, 80)}": ${filter.reason}`);
-            continue;
+          // Content relevance + spam filter.
+          // Top official_vendor sources (tagged 'top') bypass the topic gate.
+          const isTopOfficial =
+            source.trustTier === "official_vendor" &&
+            Array.isArray(source.tags) &&
+            (source.tags as string[]).includes("top");
+
+          if (!isTopOfficial) {
+            const filter = classifyContent(item.title, item.summary, item.type);
+            if (!filter.allowed) {
+              stats.filtered++;
+              console.log(`[filter] Skipping "${item.title.slice(0, 80)}": ${filter.reason}`);
+              continue;
+            }
           }
 
           try {

@@ -99,7 +99,8 @@ Get paginated content items.
 |-----------|------|---------|-------------|
 | `page` | number | 1 | Page number |
 | `limit` | number | 20 | Items per page (1-50) |
-| `windowDays` | number | 180 | Recency window in days. Items with `publishedAt` (or `createdAt` as fallback) older than this are excluded. |
+| `windowDays` | number | 180 | Recency window in days. Items with `publishedAt >= cutoff` or `(publishedAt is null AND createdAt >= cutoff)` are included. |
+| `tier` | string | - | Pass `tier=all` to disable the default trustTier gate and include all source tiers. |
 | `type` | string | - | Filter: `article`, `video`, `paper`, `release` |
 | `section` | string | - | Filter: `official`, `press`, `creators` |
 | `focusArea` | string | - | Filter by area: `research`, `design`, `frontend`, `product`, `creators`, `podcasts` |
@@ -108,14 +109,25 @@ Get paginated content items.
 | `sourceId` | string | - | Filter to a specific source |
 | `search` | string | - | Free-text search on title, summary, topics |
 
+**Default feed behaviour**
+
+By default the endpoint applies:
+1. **Recency window** — `windowDays=180` (override with `?windowDays=N`).
+2. **trustTier gate** — only `official_vendor`, `reputed_press`, `research_university`, `influencer` sources (disable with `?tier=all`).
+3. **Topic gate** — items must match ≥1 AI-tools keyword AND ≥1 design/build keyword.
+4. **Top-official bypass** — `official_vendor` sources tagged `top` skip the topic gate entirely.
+
 **Example**
 
 ```bash
-# Default 180-day window
+# Default 180-day window (top-tier sources + topic gate)
 curl "https://ai-designnews.vercel.app/api/items?type=video&focusArea=design&limit=10"
 
 # Custom window (last 30 days)
 curl "https://ai-designnews.vercel.app/api/items?windowDays=30&focusArea=design"
+
+# Disable trustTier gate (include all source tiers)
+curl "https://ai-designnews.vercel.app/api/items?tier=all&limit=20"
 
 # Override to get all-time items (very large number)
 curl "https://ai-designnews.vercel.app/api/items?windowDays=3650"

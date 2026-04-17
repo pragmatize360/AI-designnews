@@ -50,8 +50,19 @@ const AVAILABLE_FILTERS = {
   itemTypes: ["article", "video", "paper", "release"],
   contentCategories: CONTENT_CATEGORIES,
   focusAreas: FOCUS_AREAS,
-  queryParams: ["page", "limit", "section", "type", "contentCategory", "topic", "sourceId", "search", "focusArea", "windowDays"],
+  queryParams: ["page", "limit", "section", "type", "contentCategory", "topic", "sourceId", "search", "focusArea", "windowDays", "tier"],
 };
+
+/**
+ * Trust tiers included in the default strict feed.
+ * Pass `tier=all` to disable this gate.
+ */
+const DEFAULT_TRUST_TIERS = [
+  "official_vendor",
+  "reputed_press",
+  "research_university",
+  "influencer",
+] as const;
 
 /** Milliseconds in one day — used for the recency window calculation. */
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
@@ -79,6 +90,8 @@ export default async function handler(
     const sourceId = req.query.sourceId as string | undefined;
     const search = req.query.search as string | undefined;
     const focusArea = req.query.focusArea as string | undefined;
+    // tier=all disables the default trustTier restriction
+    const tier = req.query.tier as string | undefined;
 
     // Recency window cutoff — default 180 days
     const cutoff = new Date(Date.now() - windowDays * MS_PER_DAY);
@@ -87,14 +100,21 @@ export default async function handler(
     // filters without overwriting each other.
     const andClauses: Record<string, unknown>[] = [
       // Items must fall within the recency window.
-      // Fall back to createdAt for items where publishedAt is not set.
+      // Fall back to createdAt only when publishedAt is absent.
       {
         OR: [
           { publishedAt: { gte: cutoff } },
-          { createdAt: { gte: cutoff } },
+          { AND: [{ publishedAt: null }, { createdAt: { gte: cutoff } }] },
         ],
       },
     ];
+
+    // Default trustTier gate — strict 4-tier feed unless caller passes tier=all.
+    if (tier !== "all" && !section) {
+      andClauses.push({
+        source: { trustTier: { in: [...DEFAULT_TRUST_TIERS] } },
+      });
+    }
 
     if (sourceId) {
       andClauses.push({ sourceId });
@@ -154,8 +174,15 @@ export default async function handler(
       take: limit,
     });
 
-    // Content filter — remove spam / restricted / off-topic items
+    // Content filter — remove spam / restricted / off-topic items.
+    // Top official_vendor sources (tagged 'top') bypass the topic gate.
     const allowedItems = items.filter((item) => {
+      const isTopOfficial =
+        item.source.trustTier === "official_vendor" &&
+        Array.isArray(item.source.tags) &&
+        item.source.tags.includes("top");
+      if (isTopOfficial) return true;
+
       const classification = classifyContent(item.title, item.summary, item.type);
       return (
         classification.allowed &&
@@ -165,7 +192,13 @@ export default async function handler(
 
     // Score and sort items
     const scored = allowedItems.map((item) => {
-      const classification = classifyContent(item.title, item.summary, item.type);
+      const isTopOfficial =
+        item.source.trustTier === "official_vendor" &&
+        Array.isArray(item.source.tags) &&
+        item.source.tags.includes("top");
+      const classification = isTopOfficial
+        ? { allowed: true, category: "design" as const }
+        : classifyContent(item.title, item.summary, item.type);
 
       return {
       ...item,
