@@ -89,8 +89,57 @@ Visit [http://localhost:3000](http://localhost:3000)
 | GET | `/api/admin/dashboard` | Dashboard stats (admin auth) |
 | GET/POST | `/api/admin/sources` | CRUD sources (admin auth) |
 | GET/PUT/DELETE | `/api/admin/sources/[id]` | Single source CRUD (admin auth) |
+| POST | `/api/admin/sources/sync-curated` | Sync curated sources pack into DB (admin auth) |
 | GET/POST/DELETE | `/api/admin/curations` | Manage curations (admin auth) |
 | POST | `/api/admin/items` | Add manual items (admin auth) |
+
+## Curated Sources
+
+The file `data/curated-sources.json` contains the authoritative list of top curated sources (official vendors, reputed press, HCI research, and top YouTube influencers). These are synced into the database via the admin endpoint — **no schema changes required**.
+
+### Updating curated sources
+
+1. Edit `data/curated-sources.json` — add, remove, or update entries.
+2. Commit and deploy the change.
+3. Call the sync endpoint to push changes into the database:
+
+```bash
+curl -X POST "https://ai-designnews.vercel.app/api/admin/sources/sync-curated" \
+  -H "Authorization: Bearer YOUR_ADMIN_TOKEN"
+```
+
+4. The next scheduled ingestion (hourly or daily) picks up the new/updated sources automatically.
+
+### Curated source entry format
+
+```json
+{
+  "name": "OpenAI Blog",
+  "url": "https://openai.com/blog/rss.xml",
+  "type": "rss",
+  "trustTier": "official_vendor",
+  "tags": ["ai", "openai", "gpt", "top"],
+  "priorityScore": 5,
+  "enabled": true
+}
+```
+
+| Field | Required | Values | Description |
+|-------|----------|--------|-------------|
+| `name` | ✅ | string | Display name |
+| `url` | ✅ | string | RSS/Atom or YouTube feed URL (used as unique key) |
+| `type` | ✅ | `rss` \| `youtube` \| `html` \| `api` | Source type |
+| `trustTier` | ✅ | `official_vendor` \| `reputed_press` \| `research_university` \| `influencer` | Trust level |
+| `tags` | — | string[] | Topic tags |
+| `priorityScore` | — | 3–5 | Informational priority; `5` auto-adds the `"top"` tag |
+| `enabled` | — | boolean | Defaults to `true` |
+| `channelId` | — | string | YouTube channel ID (for YouTube sources) |
+
+### Environment Variables
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `CURATED_ONLY` | `false` | When `"true"`, sources absent from the curated pack are disabled (not deleted) after each sync |
 
 ### Public API Base URL
 

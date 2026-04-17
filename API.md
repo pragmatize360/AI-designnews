@@ -516,6 +516,58 @@ curl -X POST "https://ai-designnews.vercel.app/api/admin/items" \
 
 ---
 
+### POST `/admin/sources/sync-curated`
+
+Upsert the curated source pack (`data/curated-sources.json`) into the database. Existing sources are updated in-place; new ones are created. This operation is idempotent — calling it multiple times is safe.
+
+```bash
+curl -X POST "https://ai-designnews.vercel.app/api/admin/sources/sync-curated" \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+
+**Behaviour**
+
+- Reads `data/curated-sources.json` from the repository root.
+- For each entry, looks up an existing source by `url`. If found, updates `name`, `type`, `trustTier`, `tags`, `enabled`, and `channelId`. If not found, creates a new source.
+- Entries with `priorityScore: 5` automatically receive the `"top"` tag (used by the feed-ranking logic).
+- If the `CURATED_ONLY` environment variable is set to `"true"`, any source whose `url` is **not** in the curated pack is disabled (set `enabled = false`). Sources are never deleted.
+
+**Response**
+
+```json
+{
+  "created": 12,
+  "updated": 38,
+  "disabled": 0,
+  "skipped": 0,
+  "total": 50
+}
+```
+
+| Field | Description |
+|-------|-------------|
+| `created` | New sources inserted |
+| `updated` | Existing sources updated |
+| `disabled` | Sources disabled because `CURATED_ONLY=true` and not in curated pack |
+| `skipped` | Entries that failed validation or encountered a DB error |
+| `total` | `created + updated` |
+| `skippedDetails` | Array of skip reasons (only present when `skipped > 0`) |
+
+**Environment Variables**
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `CURATED_ONLY` | `false` | When `"true"`, sources absent from the curated pack are disabled (not deleted) |
+
+**How to update curated sources**
+
+1. Edit `data/curated-sources.json` in the repository.
+2. Commit and deploy.
+3. Call `POST /api/admin/sources/sync-curated`.
+4. Wait for the next scheduled ingestion (hourly or daily) to pick up the new/updated sources.
+
+---
+
 ## Error Handling
 
 All endpoints return errors in this format:
