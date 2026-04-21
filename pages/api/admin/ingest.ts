@@ -12,8 +12,6 @@ interface IngestResponse {
   success: boolean;
   runId: string;
   skipped: boolean;
-<<<<<<< HEAD
-=======
   stats?: {
     total: number;
     inserted: number;
@@ -21,7 +19,6 @@ interface IngestResponse {
     filtered: number;
     errors: number;
   };
->>>>>>> fc203b1b621a7909a5b6451e93fcd9c3c9d07861
   message: string;
 }
 
@@ -50,10 +47,7 @@ export default async function handler(
   try {
     const { sourceId, mode = "daily" } = req.body as IngestRequest;
 
-<<<<<<< HEAD
-=======
     // Validate mode
->>>>>>> fc203b1b621a7909a5b6451e93fcd9c3c9d07861
     if (mode !== "hourly" && mode !== "daily") {
       return res.status(400).json({
         success: false,
@@ -87,9 +81,6 @@ export default async function handler(
       message: `Internal server error: ${msg}`,
     });
   }
-<<<<<<< HEAD
 }
-=======
 }
->>>>>>> fc203b1b621a7909a5b6451e93fcd9c3c9d07861
 // force redeploy
