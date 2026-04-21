@@ -1,0 +1,10 @@
+{
+  "name": "3Blue1Brown",
+  "url": "https://www.youtube.com/@3blue1brown",
+  "type": "youtube",
+  "trustTier": "influencer",
+  "tags": ["AI fundamentals", "math intuition", "youtube"],
+  "priorityScore": 5,
+  "enabled": true,
+  "channelId": "UCYO_jab_esuFRV4b17AJtAw"
+}

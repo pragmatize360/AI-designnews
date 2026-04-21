@@ -9,6 +9,192 @@
     "enabled": true
   },
   {
+      },
+      {
+        "name": "3Blue1Brown",
+        "url": "https://www.youtube.com/@3blue1brown",
+        "type": "youtube",
+        "trustTier": "influencer",
+        "tags": ["AI fundamentals", "math intuition"],
+        "priorityScore": 5,
+        "enabled": true,
+        "handle": "@3blue1brown",
+        "subscriberCount": 8200000
+      },
+      {
+        "name": "Lex Fridman Podcast",
+        "url": "https://www.youtube.com/@lexfridman",
+        "type": "youtube",
+        "trustTier": "influencer",
+        "tags": ["AI interviews", "industry leaders"],
+        "priorityScore": 5,
+        "enabled": true,
+        "handle": "@lexfridman",
+        "subscriberCount": 5000000
+      },
+      {
+        "name": "Two Minute Papers",
+        "url": "https://www.youtube.com/@TwoMinutePapers",
+        "type": "youtube",
+        "trustTier": "influencer",
+        "tags": ["AI research summaries", "visual explainers"],
+        "priorityScore": 5,
+        "enabled": true,
+        "handle": "@TwoMinutePapers",
+        "subscriberCount": 1520000
+      },
+      {
+        "name": "Krish Naik",
+        "url": "https://www.youtube.com/@krishnaik06",
+        "type": "youtube",
+        "trustTier": "influencer",
+        "tags": ["ML/AI education", "applied tutorials"],
+        "priorityScore": 5,
+        "enabled": true,
+        "handle": "@krishnaik06",
+        "subscriberCount": 1400000
+      },
+      {
+        "name": "Matt Wolfe",
+        "url": "https://www.youtube.com/@mreflow",
+        "type": "youtube",
+        "trustTier": "influencer",
+        "tags": ["AI tools", "AI news", "workflows"],
+        "priorityScore": 5,
+        "enabled": true,
+        "handle": "@mreflow",
+        "subscriberCount": 525000
+      },
+      {
+        "name": "DeepLearning.AI",
+        "url": "https://www.youtube.com/@DeepLearningAI",
+        "type": "youtube",
+        "trustTier": "influencer",
+        "tags": ["AI education", "courses & events"],
+        "priorityScore": 5,
+        "enabled": true,
+        "handle": "@DeepLearningAI",
+        "subscriberCount": 393000
+      },
+      {
+        "name": "AI Explained",
+        "url": "https://www.youtube.com/@AIExplained",
+        "type": "youtube",
+        "trustTier": "influencer",
+        "tags": ["AI explainers", "model updates"],
+        "priorityScore": 5,
+        "enabled": true,
+        "handle": "@AIExplained"
+      },
+      {
+        "name": "Machine Learning Street Talk",
+        "url": "https://www.youtube.com/@MachineLearningStreetTalk",
+        "type": "youtube",
+        "trustTier": "influencer",
+        "tags": ["research discussions", "expert interviews"],
+        "priorityScore": 5,
+        "enabled": true,
+        "handle": "@MachineLearningStreetTalk"
+      },
+      {
+        "name": "MIT Technology Review – AI",
+        "url": "https://www.technologyreview.com",
+        "type": "news",
+        "trustTier": "reputed_press",
+        "tags": ["AI research", "ethics", "long-term impact"],
+        "priorityScore": 5,
+        "enabled": true
+      },
+      {
+        "name": "TechCrunch – AI",
+        "url": "https://techcrunch.com/tag/artificial-intelligence/",
+        "type": "news",
+        "trustTier": "reputed_press",
+        "tags": ["AI startups", "funding", "products"],
+        "priorityScore": 5,
+        "enabled": true
+      },
+      {
+        "name": "VentureBeat – AI",
+        "url": "https://venturebeat.com/ai/",
+        "type": "news",
+        "trustTier": "reputed_press",
+        "tags": ["enterprise AI", "platforms", "business adoption"],
+        "priorityScore": 5,
+        "enabled": true
+      },
+      {
+        "name": "Forbes – AI & Innovation",
+        "url": "https://www.forbes.com/ai/",
+        "type": "news",
+        "trustTier": "reputed_press",
+        "tags": ["executive AI", "industry transformation"],
+        "priorityScore": 5,
+        "enabled": true
+      },
+      {
+        "name": "AI News",
+        "url": "https://www.artificialintelligence-news.com/",
+        "type": "news",
+        "trustTier": "reputed_press",
+        "tags": ["daily AI updates", "industry news"],
+        "priorityScore": 5,
+        "enabled": true
+      },
+      {
+        "name": "AI Magazine",
+        "url": "https://aimagazine.com/",
+        "type": "news",
+        "trustTier": "reputed_press",
+        "tags": ["enterprise AI", "strategy", "case studies"],
+        "priorityScore": 5,
+        "enabled": true
+      },
+      {
+        "name": "LLM News Today (LLM Stats)",
+        "url": "https://llm-stats.com/ai-news",
+        "type": "news",
+        "trustTier": "reputed_press",
+        "tags": ["LLMs", "model releases", "benchmarks"],
+        "priorityScore": 5,
+        "enabled": true
+      },
+      {
+        "name": "OpenAI Blog",
+        "url": "https://openai.com/blog",
+        "type": "blog",
+        "trustTier": "official_vendor",
+        "tags": ["foundation models", "research", "product updates"],
+        "priorityScore": 5,
+        "enabled": true
+      },
+      {
+        "name": "Google DeepMind Blog",
+        "url": "https://deepmind.google/discover/blog/",
+        "type": "blog",
+        "trustTier": "official_vendor",
+        "tags": ["research", "AGI", "science"],
+        "priorityScore": 5,
+        "enabled": true
+      },
+      {
+        "name": "Anthropic Research",
+        "url": "https://www.anthropic.com/research",
+        "type": "blog",
+        "trustTier": "official_vendor",
+        "tags": ["AI safety", "Claude models"],
+        "priorityScore": 5,
+        "enabled": true
+      },
+      {
+        "name": "Meta AI Blog",
+        "url": "https://ai.meta.com/blog/",
+        "type": "blog",
+        "trustTier": "official_vendor",
+        "tags": ["open models", "multimodal AI"],
+        "priorityScore": 5,
+        "enabled": true
+      }
     "name": "Anthropic News",
     "url": "https://www.anthropic.com/rss.xml",
     "type": "rss",
