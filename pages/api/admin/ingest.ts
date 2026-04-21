@@ -82,5 +82,3 @@ export default async function handler(
     });
   }
 }
-}
-// force redeploy
