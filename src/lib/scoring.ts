@@ -1,5 +1,4 @@
 import { TrustTier } from "@prisma/client";
-import { classifyContent } from "./content-filter";
 
 /** Numeric weight for each trust tier (higher = more trusted) */
 const TIER_WEIGHTS: Record<TrustTier, number> = {
@@ -52,13 +51,7 @@ export function scoreItem(item: {
   // Topic relevance bonus (more topics = slightly higher)
   const topicBonus = Math.min(10, (item.topics?.length || 0) * 2);
 
-  // Level 1 design priority boost — design items rank above equally-scored AI/dev/business items
-  const designBonus =
-    item.title && classifyContent(item.title, item.summary).category === "design"
-      ? 25
-      : 0;
-
-  return recencyScore + tierScore + engagementScore + highEngagementBonus + topicBonus + designBonus;
+  return recencyScore + tierScore + engagementScore + highEngagementBonus + topicBonus;
 }
 
 /**

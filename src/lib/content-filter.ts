@@ -487,31 +487,36 @@ export function classifyContent(
   const hasAI = hasAnySignal(text, AI_SIGNALS);
   const hasFrontend = hasAnySignal(text, FRONTEND_TOOLING_SIGNALS);
 
-  // Papers: require design + applied UX/HCI relevance ──────────────────────
+  // Papers: allow if AI-related or has applied UX/HCI relevance
   if (itemType === "paper") {
-    if (hasDesign && hasAnySignal(text, APPLIED_UX_PAPER_SIGNALS)) {
-      return { allowed: true, category: "design" };
+    if (hasAI || hasDesign || hasAnySignal(text, APPLIED_UX_PAPER_SIGNALS)) {
+      const category = hasDesign ? "design" : "ai";
+      return { allowed: true, category };
     }
     return {
       allowed: false,
-      reason: "paper lacks applied UX/product/frontend relevance",
+      reason: "paper lacks AI or UX/product/frontend relevance",
     };
   }
 
-  // Audience gate — must have design/UX/UI signal ──────────────────────────
-  if (!hasDesign) {
-    return { allowed: false, reason: "no design/UX/UI signal found" };
+  // Allow all AI-related content
+  if (hasAI) {
+    if (hasDesign) return { allowed: true, category: "design" };
+    if (hasFrontend) return { allowed: true, category: "dev" };
+    return { allowed: true, category: "ai" };
   }
 
-  // Must also have applied AI signal OR frontend/tooling signal ─────────────
-  if (!hasAI && !hasFrontend) {
-    return {
-      allowed: false,
-      reason: "design content lacks AI or frontend/tooling context",
-    };
+  // Allow design + frontend content
+  if (hasDesign) {
+    if (hasFrontend) return { allowed: true, category: "design" };
+    return { allowed: true, category: "design" };
   }
 
-  return { allowed: true, category: "design" };
+  // Allow general dev/tech content
+  if (hasFrontend) return { allowed: true, category: "dev" };
+
+  // Allow everything else that isn't spam — let the sources determine relevance
+  return { allowed: true, category: "business" };
 }
 
 export function matchesContentCategory(
