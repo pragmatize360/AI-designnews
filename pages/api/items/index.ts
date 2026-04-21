@@ -9,10 +9,6 @@ import {
 import type { TrustTier } from "@prisma/client";
 import { applyPublicCors } from "@/lib/api/cors";
 
-/**
- * focusArea → Prisma OR conditions mapping.
- * Each area maps to a combination of item topics and/or source trustTier/type/tags.
- */
 const FOCUS_AREA_CONDITIONS: Record<string, Record<string, unknown>[]> = {
   research: [
     { topics: { hasSome: ["research", "ai safety", "machine learning", "large language models", "computer vision", "nlp", "arxiv"] } },
@@ -53,7 +49,6 @@ const AVAILABLE_FILTERS = {
   queryParams: ["page", "limit", "section", "type", "contentCategory", "topic", "sourceId", "search", "focusArea", "windowDays"],
 };
 
-/** Milliseconds in one day — used for the recency window calculation. */
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
 
 export default async function handler(
@@ -80,14 +75,9 @@ export default async function handler(
     const search = req.query.search as string | undefined;
     const focusArea = req.query.focusArea as string | undefined;
 
-    // Recency window cutoff — default 180 days
     const cutoff = new Date(Date.now() - windowDays * MS_PER_DAY);
 
-    // Build individual AND clauses so we can combine section, focusArea, and other
-    // filters without overwriting each other.
     const andClauses: Record<string, unknown>[] = [
-      // Items must fall within the recency window.
-      // Fall back to createdAt for items where publishedAt is not set.
       {
         OR: [
           { publishedAt: { gte: cutoff } },
@@ -131,7 +121,6 @@ export default async function handler(
       andClauses.push({ OR: FOCUS_AREA_CONDITIONS[focusArea] });
     }
 
-    // Collapse into a single Prisma where object
     const where: Record<string, unknown> =
       andClauses.length === 0
         ? {}
@@ -139,7 +128,6 @@ export default async function handler(
         ? andClauses[0]
         : { AND: andClauses };
 
-    // Get accurate total count from DB (before in-memory content filter)
     const totalDb = await prisma.item.count({ where });
 
     const items = await prisma.item.findMany({
@@ -154,16 +142,8 @@ export default async function handler(
       take: limit,
     });
 
-    // Content filter — remove spam / restricted / off-topic items
-    const allowedItems = items.filter((item) => {
-      const classification = classifyContent(item.title, item.summary, item.type);
-      return (
-        classification.allowed &&
-        matchesContentCategory(item.title, item.summary, contentCategory)
-      );
-    });
+    const allowedItems = items;
 
-    // Score and sort items
     const scored = allowedItems.map((item) => {
       const classification = classifyContent(item.title, item.summary, item.type);
 
@@ -184,7 +164,6 @@ export default async function handler(
       };
     });
 
-    // Pinned items first, then by score
     scored.sort((a, b) => {
       if (a.pinned && !b.pinned) return -1;
       if (!a.pinned && b.pinned) return 1;
@@ -196,9 +175,6 @@ export default async function handler(
       pagination: {
         page,
         limit,
-        // totalDb reflects the full DB count for the applied filters — use this
-        // for "Load More" / page navigation. The actual items on this page may be
-        // slightly fewer because of the in-memory content-quality filter.
         total: totalDb,
         totalPages: Math.ceil(totalDb / limit),
       },
