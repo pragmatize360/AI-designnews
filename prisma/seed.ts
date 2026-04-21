@@ -131,7 +131,7 @@ const SOURCES = [
     url: "https://www.youtube.com/@OpenAI",
     channelId: "UCLB7AzTwc6VFZrBsO2ucBMg",
     trustTier: TrustTier.official_vendor,
-    tags: ["OpenAI", "AI", "youtube"]
+    tags: ["OpenAI", "AI", "Codex""youtube"]
   },
   {
     name: "Hugging Face",
