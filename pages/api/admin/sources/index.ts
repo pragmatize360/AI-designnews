@@ -1,199 +1,214 @@
-// File: pages/api/sources.ts
+// File: pages/api/admin/sources/index.ts
 
 import type { NextApiRequest, NextApiResponse } from "next";
 
-const youtube_channels = [
-  {
-    name: "3Blue1Brown",
-    handle: "@3blue1brown",
-    platform: "YouTube",
-    subscriber_count: 8200000,
-    count_label: "8.2M",
-    category: ["AI fundamentals", "math intuition"],
-    source: {
-      reference_id: "turn5search176",
-      url: "https://clickstrike.com/blog/best-ai-youtube-channels/"
-    }
+// Build the object as a TypeScript constant
+const data = {
+  meta: {
+    title: "Top AI Sources – YouTube, News & Articles",
+    version: "1.0",
+    last_updated: "2026-04",
+    ranking_logic: "Reach-first (subscribers/followers where available), otherwise authority and influence",
+    counts_policy: "Only explicit, verifiable counts included. Unknown values set to null."
   },
-  {
-    name: "Lex Fridman Podcast",
-    handle: "@lexfridman",
-    platform: "YouTube",
-    subscriber_count: 5000000,
-    count_label: "5M",
-    category: ["AI interviews", "industry leaders"],
-    source: {
-      reference_id: "turn5search176",
-      url: "https://clickstrike.com/blog/best-ai-youtube-channels/"
-    }
-  },
-  {
-    name: "Two Minute Papers",
-    handle: "@TwoMinutePapers",
-    platform: "YouTube",
-    subscriber_count: 1520000,
-    count_label: "1.52M",
-    category: ["AI research summaries", "visual explainers"],
-    source: {
-      reference_id: "turn5search174",
-      url: "https://yourdreamai.com/best-ai-focused-youtube-channels/"
-    }
-  },
-  {
-    name: "Krish Naik",
-    handle: "@krishnaik06",
-    platform: "YouTube",
-    subscriber_count: 1400000,
-    count_label: "1.4M",
-    category: ["ML/AI education", "applied tutorials"],
-    source: {
-      reference_id: "turn5search175",
-      url: "https://videos.feedspot.com/ai_youtube_channels/"
-    }
-  },
-  {
-    name: "Matt Wolfe",
-    handle: "@mreflow",
-    platform: "YouTube",
-    subscriber_count: 525000,
-    count_label: "525K",
-    category: ["AI tools", "AI news", "workflows"],
-    source: {
-      reference_id: "turn5search174",
-      url: "https://yourdreamai.com/best-ai-focused-youtube-channels/"
-    }
-  },
-  {
-    name: "DeepLearning.AI",
-    handle: "@DeepLearningAI",
-    platform: "YouTube",
-    subscriber_count: 393000,
-    count_label: "393K",
-    category: ["AI education", "courses & events"],
-    source: {
-      reference_id: "turn5search179",
-      url: "https://aimojo.io/youtube-channels-master-generative-ai/"
-    }
-  },
-  {
-    name: "AI Explained",
-    handle: "@AIExplained",
-    platform: "YouTube",
-    subscriber_count: null,
-    count_label: null,
-    category: ["AI explainers", "model updates"],
-    source: {
-      reference_id: "turn5search177",
-      url: "https://usefulai.com/youtube-channels"
-    }
-  },
-  {
-    name: "Machine Learning Street Talk",
-    handle: "@MachineLearningStreetTalk",
-    platform: "YouTube",
-    subscriber_count: null,
-    count_label: null,
-    category: ["research discussions", "expert interviews"],
-    source: {
-      reference_id: "turn5search177",
-      url: "https://usefulai.com/youtube-channels"
-    }
-  }
-];
 
-const ai_news_websites = [
-  {
-    name: "MIT Technology Review (AI coverage)",
-    type: "website",
-    followers_or_subscribers: null,
-    unit: null,
-    source: {
-      reference_id: "turn5search171",
-      url: "https://www.jeffbullas.com/ai-news/"
+  sources: [
+    // ==== YOUTUBE ====
+    {
+      id: "yt_001",
+      type: "youtube",
+      name: "3Blue1Brown",
+      handle: "@3blue1brown",
+      subscriber_count: 8200000,
+      video_count: null,
+      focus: ["AI fundamentals", "math", "visual explanations"],
+      priority_score: 0.98
+    },
+    {
+      id: "yt_002",
+      type: "youtube",
+      name: "Lex Fridman Podcast",
+      handle: "@lexfridman",
+      subscriber_count: 5000000,
+      video_count: null,
+      focus: ["AI leadership", "long-form interviews", "AGI"],
+      priority_score: 0.97
+    },
+    {
+      id: "yt_003",
+      type: "youtube",
+      name: "Two Minute Papers",
+      handle: "@TwoMinutePapers",
+      subscriber_count: 1520000,
+      video_count: null,
+      focus: ["AI research", "computer vision", "generative AI"],
+      priority_score: 0.95
+    },
+    {
+      id: "yt_004",
+      type: "youtube",
+      name: "Krish Naik",
+      handle: "@krishnaik06",
+      subscriber_count: 1400000,
+      video_count: null,
+      focus: ["machine learning", "applied AI", "education"],
+      priority_score: 0.92
+    },
+    {
+      id: "yt_005",
+      type: "youtube",
+      name: "Matt Wolfe",
+      handle: "@mreflow",
+      subscriber_count: 525000,
+      video_count: null,
+      focus: ["AI tools", "no-code", "productivity"],
+      priority_score: 0.90
+    },
+    {
+      id: "yt_006",
+      type: "youtube",
+      name: "DeepLearning.AI",
+      handle: "@DeepLearningAI",
+      subscriber_count: 393000,
+      video_count: null,
+      focus: ["AI education", "courses", "events"],
+      priority_score: 0.89
+    },
+    {
+      id: "yt_007",
+      type: "youtube",
+      name: "AI Explained",
+      handle: "@AIExplained",
+      subscriber_count: null,
+      video_count: null,
+      focus: ["AI models", "explainers", "industry shifts"],
+      priority_score: 0.85
+    },
+    {
+      id: "yt_008",
+      type: "youtube",
+      name: "Machine Learning Street Talk",
+      handle: "@MachineLearningStreetTalk",
+      subscriber_count: null,
+      video_count: null,
+      focus: ["research interviews", "deep AI discussions"],
+      priority_score: 0.84
+    },
+
+    // ==== AI NEWS ====
+    {
+      id: "news_001",
+      type: "news",
+      name: "MIT Technology Review – AI",
+      url: "https://www.technologyreview.com",
+      follower_count: null,
+      focus: ["AI research", "ethics", "long-term impact"],
+      priority_score: 0.98
+    },
+    {
+      id: "news_002",
+      type: "news",
+      name: "TechCrunch – AI",
+      url: "https://techcrunch.com/tag/artificial-intelligence/",
+      follower_count: null,
+      focus: ["AI startups", "funding", "products"],
+      priority_score: 0.96
+    },
+    {
+      id: "news_003",
+      type: "news",
+      name: "VentureBeat – AI",
+      url: "https://venturebeat.com/ai/",
+      follower_count: null,
+      focus: ["enterprise AI", "platforms", "business adoption"],
+      priority_score: 0.95
+    },
+    {
+      id: "news_004",
+      type: "news",
+      name: "Forbes – AI & Innovation",
+      url: "https://www.forbes.com/ai/",
+      follower_count: null,
+      focus: ["executive AI", "industry transformation"],
+      priority_score: 0.94
+    },
+    {
+      id: "news_005",
+      type: "news",
+      name: "AI News",
+      url: "https://www.artificialintelligence-news.com/",
+      follower_count: null,
+      focus: ["daily AI updates", "industry news"],
+      priority_score: 0.90
+    },
+    {
+      id: "news_006",
+      type: "news",
+      name: "AI Magazine",
+      url: "https://aimagazine.com/",
+      follower_count: null,
+      focus: ["enterprise AI", "strategy", "case studies"],
+      priority_score: 0.89
+    },
+    {
+      id: "news_007",
+      type: "news",
+      name: "LLM News / Techmeme AI",
+      url: "https://llm-stats.com/ai-news",
+      follower_count: null,
+      focus: ["LLMs", "model releases", "benchmarks"],
+      priority_score: 0.88
+    },
+
+    // ==== OFFICIAL BLOGS ====
+    {
+      id: "blog_001",
+      type: "blog",
+      name: "OpenAI Blog",
+      url: "https://openai.com/blog",
+      focus: ["foundation models", "research", "product updates"],
+      priority_score: 0.99
+    },
+    {
+      id: "blog_002",
+      type: "blog",
+      name: "Google DeepMind Blog",
+      url: "https://deepmind.google/discover/blog/",
+      focus: ["research", "AGI", "science"],
+      priority_score: 0.98
+    },
+    {
+      id: "blog_003",
+      type: "blog",
+      name: "Anthropic Research",
+      url: "https://www.anthropic.com/research",
+      focus: ["AI safety", "Claude models"],
+      priority_score: 0.97
+    },
+    {
+      id: "blog_004",
+      type: "blog",
+      name: "Meta AI Research",
+      url: "https://ai.meta.com/blog/",
+      focus: ["open models", "multimodal AI"],
+      priority_score: 0.95
     }
-  },
-  {
-    name: "TechCrunch (AI section)",
-    type: "website",
-    followers_or_subscribers: null,
-    unit: null,
-    source: {
-      reference_id: "turn5search167",
-      url: "https://www.forbes.com/sites/allbusiness/2025/10/24/the-15-best-websites-you-should-read-to-learn-about-developments-in-ai/"
-    }
-  },
-  {
-    name: "Forbes (AI & Innovation channels)",
-    type: "website",
-    followers_or_subscribers: null,
-    unit: null,
-    source: {
-      reference_id: "turn5search167",
-      url: "https://www.forbes.com/sites/allbusiness/2025/10/24/the-15-best-websites-you-should-read-to-learn-about-developments-in-ai/"
-    }
-  },
-  {
-    name: "VentureBeat (AI coverage)",
-    type: "website",
-    followers_or_subscribers: null,
-    unit: null,
-    source: {
-      reference_id: "turn5search171",
-      url: "https://www.jeffbullas.com/ai-news/"
-    }
-  },
-  {
-    name: "AI News",
-    type: "website",
-    followers_or_subscribers: null,
-    unit: null,
-    source: {
-      reference_id: "turn5search168",
-      url: "https://techdator.net/ai-news-websites/"
-    }
-  },
-  {
-    name: "AI Magazine",
-    type: "website",
-    followers_or_subscribers: null,
-    unit: null,
-    source: {
-      reference_id: "turn5search169",
-      url: "https://aimagazine.com/"
-    }
-  },
-  {
-    name: "LLM News Today (LLM Stats AI News)",
-    type: "website",
-    followers_or_subscribers: null,
-    unit: null,
-    source: {
-      reference_id: "turn5search170",
-      url: "https://llm-stats.com/ai-news"
-    }
-  },
-  {
-    name: "OpenAI Blog",
-    type: "website",
-    followers_or_subscribers: null,
-    unit: null,
-    source: {
-      reference_id: "turn5search171",
-      url: "https://www.jeffbullas.com/ai-news/"
-    }
+  ],
+
+  notes: {
+    intended_use: [
+      "AI content API",
+      "Design & AI trend curation",
+      "Leadership dashboards",
+      "Signal scoring pipelines"
+    ],
+    recommended_next_step: "Add engagement_rate, update_frequency, and freshness_score via cron enrichment"
   }
-];
+};
 
 export default function handler(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
-  res.status(200).json({
-    youtube_channels,
-    ai_news_websites,
-    notes: {
-      counts_only_when_explicit: true,
-      null_means_not_provided_in_sources: true
-    }
-  });
+  res.status(200).json(data);
 }
