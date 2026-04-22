@@ -81,13 +81,26 @@ export default function AdminPage() {
     loadData();
   }
 
+
+  const [ingestStatus, setIngestStatus] = useState<string | null>(null);
+
   async function triggerIngestion(sourceId?: string) {
-    await fetch("/api/ingestion", {
-      method: "POST",
-      headers: headers(),
-      body: JSON.stringify(sourceId ? { sourceId } : {}),
-    });
-    alert("Ingestion triggered! Check the Runs tab for progress.");
+    setIngestStatus("Triggering ingestion...");
+    try {
+      const res = await fetch("/api/admin/ingest-manual", {
+        method: "POST",
+        headers: headers(),
+        body: JSON.stringify(sourceId ? { sourceId } : {}),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setIngestStatus(`✅ ${data.message} (run ID: ${data.runId || "N/A"})`);
+      } else {
+        setIngestStatus(`❌ Error: ${data.error || data.message}`);
+      }
+    } catch (e: any) {
+      setIngestStatus(`❌ Exception: ${e.message}`);
+    }
     loadData();
   }
 
@@ -132,12 +145,18 @@ export default function AdminPage() {
       <Header />
 
       <div className="admin">
+
         <div className="admin__header">
           <h1 className="admin__title">Admin Dashboard</h1>
           <button className="btn btn--primary" onClick={() => triggerIngestion()}>
-            ▶ Run Full Ingestion
+            🚀 Trigger Manual Ingestion
           </button>
         </div>
+        {ingestStatus && (
+          <div style={{ margin: "20px 0", minHeight: 30 }}>
+            <pre>{ingestStatus}</pre>
+          </div>
+        )}
 
         <nav className="admin__nav">
           <a
