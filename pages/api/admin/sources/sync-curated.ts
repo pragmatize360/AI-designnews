@@ -47,6 +47,14 @@ export default async function handler(
       return res.status(400).json({ error: "Curated sources file is empty or not a valid JSON array" });
     }
 
+    // Purge any DB sources with invalid SourceType values (e.g. 'news', 'blog', 'x')
+    const purged = await prisma.source.deleteMany({
+      where: { type: { notIn: VALID_TYPES as unknown as string[] } },
+    });
+    if (purged.count > 0) {
+      console.log(`[sync-curated] Purged ${purged.count} source(s) with invalid type from DB`);
+    }
+
     let created = 0;
     let updated = 0;
     let skipped = 0;

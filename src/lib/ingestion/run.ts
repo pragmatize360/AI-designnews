@@ -115,6 +115,8 @@ export async function runIngestion(
     // Build source query based on mode
     const where: Record<string, unknown> = {
       enabled: true,
+      // Guard: only query sources with valid SourceType enum values
+      type: { in: ["rss", "html", "api", "youtube"] },
       OR: [
         { degradedUntil: null },
         { degradedUntil: { lt: new Date() } },
