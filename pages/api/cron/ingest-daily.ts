@@ -9,7 +9,7 @@ import { runIngestion } from "@/lib/ingestion/run";
  * Protected by CRON_SECRET (passed as the `secret` query parameter or via the
  * `Authorization: Bearer <secret>` header).
  *
- * Schedule (vercel.json): 15 2 * * *  (daily at 02:15 UTC)
+ * Schedule (vercel.json): 30 2 * * *  (daily at 08:00 IST / 02:30 UTC)
  */
 export default async function handler(
   req: NextApiRequest,
