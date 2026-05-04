@@ -17,7 +17,7 @@ export default async function handler(
   try {
     // Optionally, support passing a single sourceId and/or mode
     const sourceId = req.body?.sourceId as string | undefined;
-    const mode = (req.body?.mode as IngestionMode | undefined) ?? "manual";
+    const mode = (req.body?.mode as IngestionMode | undefined) ?? ("manual" as IngestionMode);
     const { runId, skipped } = await runIngestion(sourceId, mode);
     return res.status(200).json({ message: skipped ? "Ingestion already running" : "Manual ingestion started", runId, skipped });
   } catch (e) {
