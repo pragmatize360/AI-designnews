@@ -1,84 +1,76 @@
 import type { NextApiRequest, NextApiResponse } from "next";
-import { isAdminAuthorized } from "@/lib/auth";
-import { runIngestion } from "@/lib/ingestion/run";
-import type { IngestionMode } from "@/lib/ingestion/run";
+import { runIngestion, type IngestionMode } from "@/lib/ingestion/run";
 
-interface IngestRequest {
-  sourceId?: string;
-  mode?: IngestionMode;
-}
-
-interface IngestResponse {
-  success: boolean;
-  runId: string;
-  skipped: boolean;
-  stats?: {
-    total: number;
-    inserted: number;
-    duplicates: number;
-    filtered: number;
-    errors: number;
-  };
-  message: string;
-}
-
+/**
+ * POST /api/admin/ingest — manually trigger ingestion via browser, Make, or automation.
+ * - Pass the admin token via "x-api-key" header, "Authorization" header, or ?key= in query.
+ * - Supports CORS (preflight and browser call).
+ * - Handles JSON and text/plain POST bodies.
+ */
 export default async function handler(
   req: NextApiRequest,
-  res: NextApiResponse<IngestResponse>
+  res: NextApiResponse
 ) {
-  if (!isAdminAuthorized(req)) {
-    return res.status(401).json({
-      success: false,
-      runId: "",
-      skipped: false,
-      message: "Unauthorized: missing or invalid API key",
-    });
+  // CORS preflight support
+  if (req.method === "OPTIONS") {
+    res.setHeader("Access-Control-Allow-Origin", "*");
+    res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
+    res.setHeader("Access-Control-Allow-Headers", "*");
+    return res.status(200).end();
   }
+  res.setHeader("Access-Control-Allow-Origin", "*");
 
   if (req.method !== "POST") {
-    return res.status(405).json({
-      success: false,
-      runId: "",
-      skipped: false,
-      message: "Method not allowed. Use POST.",
-    });
+    return res.status(405).json({ error: "Method not allowed" });
+  }
+
+  // Accept admin token via header or query param
+  const headerToken =
+    (typeof req.headers["x-api-key"] === "string"
+      ? req.headers["x-api-key"]
+      : Array.isArray(req.headers["x-api-key"])
+      ? req.headers["x-api-key"][0]
+      : undefined) ||
+    (typeof req.headers.authorization === "string"
+      ? req.headers.authorization.replace(/^Bearer /, "")
+      : undefined);
+
+  const queryToken =
+    typeof req.query.api_key === "string"
+      ? req.query.api_key
+      : typeof req.query.key === "string"
+      ? req.query.key
+      : typeof req.query.token === "string"
+      ? req.query.token
+      : undefined;
+
+  const token = headerToken || queryToken;
+  if (token !== process.env.ADMIN_API_KEY) {
+    return res.status(401).json({ error: "Unauthorized" });
+  }
+
+  // Robustly parse string or object body
+  let body: any = req.body;
+  if (typeof req.body === "string") {
+    try {
+      body = JSON.parse(req.body);
+    } catch {
+      body = {};
+    }
   }
 
   try {
-    const { sourceId, mode = "daily" } = req.body as IngestRequest;
-
-    // Validate mode
-    if (mode !== "hourly" && mode !== "daily") {
-      return res.status(400).json({
-        success: false,
-        runId: "",
-        skipped: false,
-        message: "Invalid mode. Use 'hourly' or 'daily'.",
-      });
-    }
-
-    console.log(
-      `[admin/ingest] Triggering ${mode} ingestion${sourceId ? ` for source ${sourceId}` : ""}`
-    );
-
-    const result = await runIngestion(sourceId, mode);
-
+    const sourceId = body?.sourceId as string | undefined;
+    // Safe IngestionMode union, defaulting to "manual"
+    const mode = (body?.mode as IngestionMode | undefined) ?? "manual";
+    const { runId, skipped } = await runIngestion(sourceId, mode);
     return res.status(200).json({
-      success: !result.skipped,
-      runId: result.runId,
-      skipped: result.skipped,
-      message: result.skipped
-        ? `Ingestion run already in progress (${result.runId}). Skipping.`
-        : `Ingestion triggered successfully (${result.runId}). Check status in admin dashboard.`,
+      message: skipped ? "Ingestion already running" : "Manual ingestion started",
+      runId,
+      skipped,
     });
   } catch (e) {
-    const msg = e instanceof Error ? e.message : String(e);
-    console.error("[admin/ingest] Error:", msg);
-    return res.status(500).json({
-      success: false,
-      runId: "",
-      skipped: false,
-      message: `Internal server error: ${msg}`,
-    });
+    console.error("Error triggering manual ingestion:", e);
+    return res.status(500).json({ error: "Internal server error" });
   }
 }
