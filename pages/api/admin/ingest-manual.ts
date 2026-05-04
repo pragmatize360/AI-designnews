@@ -1,6 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import { isAdminAuthorized } from "@/lib/auth";
-import { runIngestion } from "@/lib/ingestion/run";
+import { runIngestion, type IngestionMode } from "@/lib/ingestion/run";
 
 export default async function handler(
   req: NextApiRequest,
@@ -17,7 +17,7 @@ export default async function handler(
   try {
     // Optionally, support passing a single sourceId and/or mode
     const sourceId = req.body?.sourceId as string | undefined;
-    const mode = (req.body?.mode as string | undefined) ?? "manual";
+    const mode = (req.body?.mode as IngestionMode | undefined) ?? "manual";
     const { runId, skipped } = await runIngestion(sourceId, mode);
     return res.status(200).json({ message: skipped ? "Ingestion already running" : "Manual ingestion started", runId, skipped });
   } catch (e) {
