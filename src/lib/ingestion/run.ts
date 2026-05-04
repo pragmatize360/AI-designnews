@@ -112,35 +112,38 @@ export async function runIngestion(
   const errors: Array<{ source: string; error: string }> = [];
 
   try {
-    // Build source query based on mode
-    const where: Record<string, unknown> = {
-      enabled: true,
-      // Guard: only query sources with valid SourceType enum values
-      type: { in: ["rss", "html", "api", "youtube"] },
-      OR: [
-        { degradedUntil: null },
-        { degradedUntil: { lt: new Date() } },
-      ],
-    };
+    // Use raw SQL to get valid source IDs — avoids Prisma crashing on rows
+    // with invalid enum values (e.g. type='x') during deserialization.
+    let rawRows: { id: string }[];
 
     if (sourceId) {
-      where.id = sourceId;
-      // When manually triggered for a specific source, ignore degraded status
-      delete where.OR;
+      rawRows = await prisma.$queryRaw<{ id: string }[]>`
+        SELECT id FROM "Source"
+        WHERE id = ${sourceId}
+          AND enabled = true
+          AND "type"::text IN ('rss', 'html', 'api', 'youtube')
+      `;
     } else if (mode === "hourly") {
-      // Hourly smart subset: YouTube channels + official vendor sources only.
-      // The existing OR (degradedUntil check) is preserved via the top-level AND.
-      where.AND = [
-        {
-          OR: [
-            { type: "youtube" },
-            { trustTier: "official_vendor" },
-          ],
-        },
-      ];
+      rawRows = await prisma.$queryRaw<{ id: string }[]>`
+        SELECT id FROM "Source"
+        WHERE enabled = true
+          AND "type"::text IN ('rss', 'html', 'api', 'youtube')
+          AND ("degradedUntil" IS NULL OR "degradedUntil" < NOW())
+          AND ("type"::text = 'youtube' OR "trustTier"::text = 'official_vendor')
+      `;
+    } else {
+      rawRows = await prisma.$queryRaw<{ id: string }[]>`
+        SELECT id FROM "Source"
+        WHERE enabled = true
+          AND "type"::text IN ('rss', 'html', 'api', 'youtube')
+          AND ("degradedUntil" IS NULL OR "degradedUntil" < NOW())
+      `;
     }
 
-    const sources = await prisma.source.findMany({ where });
+    const validIds = rawRows.map((r) => r.id);
+    const sources = validIds.length > 0
+      ? await prisma.source.findMany({ where: { id: { in: validIds } } })
+      : [];
 
     for (const source of sources) {
       try {

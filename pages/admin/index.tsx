@@ -108,6 +108,25 @@ export default function AdminPage() {
     loadData();
   }
 
+  async function cleanupInvalidSources() {
+    setIngestStatus("⏳ Cleaning up invalid sources...");
+    try {
+      const res = await fetch("/api/admin/cleanup-invalid-sources", {
+        method: "POST",
+        headers: headers(),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setIngestStatus(`✅ ${data.message}`);
+      } else {
+        setIngestStatus(`❌ Cleanup error: ${data.error}`);
+      }
+    } catch (e: any) {
+      setIngestStatus(`❌ Exception: ${e.message}`);
+    }
+    loadData();
+  }
+
   if (!authenticated) {
     return (
       <>
@@ -167,6 +186,13 @@ export default function AdminPage() {
               disabled={ingestLoading}
             >
               {ingestLoading ? "⏳ Syncing..." : "🔄 Sync Now"}
+            </button>
+            <button
+              className="btn btn--warning"
+              onClick={cleanupInvalidSources}
+              title="Delete DB sources with invalid type values"
+            >
+              🧹 Fix DB Sources
             </button>
           </div>
         </div>
