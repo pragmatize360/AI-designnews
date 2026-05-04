@@ -83,14 +83,17 @@ export default function AdminPage() {
 
 
   const [ingestStatus, setIngestStatus] = useState<string | null>(null);
+  const [ingestMode, setIngestMode] = useState<"hourly" | "daily">("daily");
+  const [ingestLoading, setIngestLoading] = useState(false);
 
   async function triggerIngestion(sourceId?: string) {
-    setIngestStatus("Triggering ingestion...");
+    setIngestLoading(true);
+    setIngestStatus("⏳ Syncing...");
     try {
       const res = await fetch("/api/admin/ingest-manual", {
         method: "POST",
         headers: headers(),
-        body: JSON.stringify(sourceId ? { sourceId } : {}),
+        body: JSON.stringify({ mode: ingestMode, ...(sourceId ? { sourceId } : {}) }),
       });
       const data = await res.json();
       if (res.ok) {
@@ -101,6 +104,7 @@ export default function AdminPage() {
     } catch (e: any) {
       setIngestStatus(`❌ Exception: ${e.message}`);
     }
+    setIngestLoading(false);
     loadData();
   }
 
@@ -148,13 +152,27 @@ export default function AdminPage() {
 
         <div className="admin__header">
           <h1 className="admin__title">Admin Dashboard</h1>
-          <button className="btn btn--primary" onClick={() => triggerIngestion()}>
-            🚀 Trigger Manual Ingestion
-          </button>
+          <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", flexWrap: "wrap" }}>
+            <select
+              value={ingestMode}
+              onChange={(e) => setIngestMode(e.target.value as "hourly" | "daily")}
+              style={{ padding: "0.5rem 0.75rem", borderRadius: "6px", border: "1px solid var(--border)", background: "var(--surface)", color: "var(--text)", fontSize: "0.9rem" }}
+            >
+              <option value="daily">Daily Sync</option>
+              <option value="hourly">Hourly Sync</option>
+            </select>
+            <button
+              className="btn btn--primary"
+              onClick={() => triggerIngestion()}
+              disabled={ingestLoading}
+            >
+              {ingestLoading ? "⏳ Syncing..." : "🔄 Sync Now"}
+            </button>
+          </div>
         </div>
         {ingestStatus && (
-          <div style={{ margin: "20px 0", minHeight: 30 }}>
-            <pre>{ingestStatus}</pre>
+          <div style={{ margin: "12px 0", padding: "10px 16px", borderRadius: "6px", background: "var(--surface)", border: "1px solid var(--border)", fontSize: "0.9rem" }}>
+            {ingestStatus}
           </div>
         )}
 
